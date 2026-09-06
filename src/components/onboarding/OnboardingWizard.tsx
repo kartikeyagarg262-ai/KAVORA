@@ -36,7 +36,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const dailyBudget = Math.round(availableSpending / (periodDays || 30));
 
   const handleNext = () => {
-    if (step < 6) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
       // Complete!
@@ -58,7 +58,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         monthlyIncome: monthlyMoney,
         protectedSavings,
         periodDays,
-        budgetMode,
+        budgetMode: 'fixed',
         startDate: todayStr,
       };
 
@@ -82,7 +82,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         <div className="flex items-center justify-between mb-8">
           <Logo size="sm" showTagline={false} />
           <div className="flex items-center gap-1.5">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -135,7 +135,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         {step === 2 && (
           <div className="space-y-6 py-2 animate-fadeIn">
             <div>
-              <span className="text-[11px] font-bold text-spending-cyan uppercase tracking-wider">Screen 2 of 6</span>
+              <span className="text-[11px] font-bold text-spending-cyan uppercase tracking-wider">Screen 2 of 5</span>
               <h2 className="text-2xl font-extrabold text-white tracking-tight mt-1">
                 Enter Monthly Money
               </h2>
@@ -183,7 +183,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         {step === 3 && (
           <div className="space-y-6 py-2 animate-fadeIn">
             <div>
-              <span className="text-[11px] font-bold text-vault-purple uppercase tracking-wider">Screen 3 of 6</span>
+              <span className="text-[11px] font-bold text-vault-purple uppercase tracking-wider">Screen 3 of 5</span>
               <h2 className="text-2xl font-extrabold text-white tracking-tight mt-1 flex items-center gap-2">
                 <span>Set Protected Savings</span>
                 <span>🔒</span>
@@ -200,39 +200,36 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                   type="number"
                   min="0"
                   max={monthlyMoney}
-                  step="50"
+                  step="100"
                   value={protectedSavings}
                   onChange={(e) => setProtectedSavings(Math.min(monthlyMoney, Math.max(0, Number(e.target.value))))}
-                  className="w-full pl-12 pr-4 py-4 bg-obsidian-950 border border-vault-purple/30 rounded-2xl text-white font-mono text-3xl font-bold focus:outline-none focus:border-vault-purple"
+                  className="w-full pl-12 pr-4 py-4 bg-obsidian-950 border border-white/10 rounded-2xl text-white font-mono text-3xl font-bold focus:outline-none focus:border-vault-purple text-left"
                 />
               </div>
 
-              {/* Quick % buttons */}
-              <div className="flex gap-2 mt-3">
+              {/* Preset buttons */}
+              <div className="flex flex-wrap gap-2 mt-3">
                 {[
                   { label: '10%', val: Math.round(monthlyMoney * 0.1) },
-                  { label: '15%', val: Math.round(monthlyMoney * 0.15) },
+                  { label: '₹500', val: 500 },
+                  { label: '₹1,000', val: 1000 },
                   { label: '20%', val: Math.round(monthlyMoney * 0.2) },
-                  { label: '₹500 (Example)', val: 500 },
-                ].map((item, idx) => (
+                  { label: 'None (₹0)', val: 0 },
+                ].map((preset, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setProtectedSavings(item.val)}
-                    className={`flex-1 py-1.5 rounded-xl border text-xs font-mono transition-all ${
-                      protectedSavings === item.val
-                        ? 'bg-vault-purple/20 border-vault-purple text-white font-bold'
+                    onClick={() => setProtectedSavings(preset.val)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-mono transition-all ${
+                      protectedSavings === preset.val 
+                        ? 'bg-vault-purple/20 border-vault-purple text-white font-bold' 
                         : 'bg-obsidian-950 border-white/5 text-slate-400 hover:text-white'
                     }`}
                   >
-                    {item.label}
+                    {preset.label}
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-vault-purple/10 border border-vault-purple/20 text-xs text-slate-300">
-              🔒 <b>Vault Guarantee:</b> ₹{protectedSavings} will stay locked. Remaining Available Spending = <b>₹{availableSpending}</b>.
             </div>
           </div>
         )}
@@ -241,7 +238,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         {step === 4 && (
           <div className="space-y-6 py-2 animate-fadeIn">
             <div>
-              <span className="text-[11px] font-bold text-flexible-green uppercase tracking-wider">Screen 4 of 6</span>
+              <span className="text-[11px] font-bold text-flexible-green uppercase tracking-wider">Screen 4 of 5</span>
               <h2 className="text-2xl font-extrabold text-white tracking-tight mt-1 flex items-center gap-2">
                 <span>Select Budget Period</span>
                 <Calendar size={22} className="text-flexible-green" />
@@ -279,70 +276,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </div>
         )}
 
-        {/* SCREEN 5: Select Budget Mode */}
+        {/* SCREEN 5: Calculated Financial Setup */}
         {step === 5 && (
           <div className="space-y-6 py-2 animate-fadeIn">
-            <div>
-              <span className="text-[11px] font-bold text-spending-cyan uppercase tracking-wider">Screen 5 of 6</span>
-              <h2 className="text-2xl font-extrabold text-white tracking-tight mt-1">
-                Select Budget Mode
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Choose how KAVORA calculates your daily spending allowance:
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setBudgetMode('fixed')}
-                className={`w-full p-4 rounded-2xl border text-left transition-all ${
-                  budgetMode === 'fixed'
-                    ? 'bg-spending-cyan/15 border-spending-cyan shadow-lg shadow-spending-cyan/10'
-                    : 'bg-obsidian-950/70 border-white/5 hover:border-white/15'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Sliders size={18} className="text-spending-cyan" />
-                    <h3 className="text-sm font-bold text-white">Fixed Daily Budget</h3>
-                  </div>
-                  <span className="text-xs font-mono text-spending-cyan font-bold">₹{dailyBudget}/day</span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Monthly spending money divided equally: <b>₹{availableSpending} ÷ {periodDays} days = ₹{dailyBudget}/day</b>.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setBudgetMode('smart')}
-                className={`w-full p-4 rounded-2xl border text-left transition-all ${
-                  budgetMode === 'smart'
-                    ? 'bg-flexible-green/15 border-flexible-green shadow-lg shadow-flexible-green/10'
-                    : 'bg-obsidian-950/70 border-white/5 hover:border-white/15'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Zap size={18} className="text-flexible-green" />
-                    <h3 className="text-sm font-bold text-white">Smart Daily Budget</h3>
-                  </div>
-                  <span className="text-xs font-mono text-flexible-green font-bold">Dynamic</span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Automatically recalculates every day: <b>Remaining Available Money ÷ Remaining Days</b>. Adapts continuously!
-                </p>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* SCREEN 6: Calculated Financial Setup */}
-        {step === 6 && (
-          <div className="space-y-6 py-2 animate-fadeIn">
             <div className="text-center">
-              <span className="text-[11px] font-bold text-flexible-green uppercase tracking-wider">Setup Complete</span>
+              <span className="text-[11px] font-bold text-flexible-green uppercase tracking-wider">Setup Complete • Screen 5 of 5</span>
               <h2 className="text-2xl font-extrabold text-white tracking-tight mt-1">
                 Your Calculated Financial Plan
               </h2>
@@ -368,13 +306,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <span className="font-bold text-spending-cyan text-sm">{formatCurrency(availableSpending)}</span>
               </div>
               <div className="flex items-center justify-between text-xs py-2 pt-3">
-                <span className="text-flexible-green font-bold text-sm">Calculated Daily Budget:</span>
+                <span className="text-flexible-green font-bold text-sm">Daily Spending Budget:</span>
                 <span className="font-extrabold text-flexible-mint text-xl">{formatCurrency(dailyBudget)} / day</span>
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-flexible-green/10 border border-flexible-green/20 text-xs text-slate-300">
-              🟢 Any unspent daily budget will automatically roll into <b>Flexible Savings</b> to protect you from future overspending!
+              🟢 Any unspent daily budget will automatically roll into <b>Flexible Savings</b> to cushion you from future overspending!
             </div>
           </div>
         )}
@@ -399,7 +337,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             onClick={handleNext}
             className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-flexible-green to-spending-cyan text-obsidian-950 font-extrabold text-xs shadow-xl shadow-flexible-green/20 hover:shadow-flexible-green/30 hover:scale-[1.02] active:scale-[0.98] transition-all ml-auto"
           >
-            <span>{step === 6 ? 'Start Managing My Money' : 'Continue'}</span>
+            <span>{step === 5 ? 'Start Managing My Money' : 'Continue'}</span>
             <ArrowRight size={16} strokeWidth={2.5} />
           </button>
         </div>

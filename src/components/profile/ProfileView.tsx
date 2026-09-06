@@ -266,55 +266,6 @@ export const ProfileView: React.FC = () => {
         )}
       </div>
 
-      {/* 3-Tier Mode Configuration */}
-      <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 space-y-5">
-        <div>
-          <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-            <Sliders size={18} className="text-spending-cyan" />
-            <span>Budget Calculation Mode</span>
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Switch between a constant fixed daily limit or dynamic smart reallocation
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div
-            onClick={() => setBudgetMode('fixed')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              config.budgetMode === 'fixed'
-                ? 'bg-spending-cyan/15 border-spending-cyan shadow-lg shadow-spending-cyan/10'
-                : 'bg-obsidian-950/70 border-white/5 hover:border-white/15'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-spending-cyan">Fixed Mode</span>
-              <span className="text-xs font-mono font-bold text-white">{formatCurrency(ledger.fixedDailyBudget)}/d</span>
-            </div>
-            <p className="text-xs text-slate-300 font-medium">
-              Available monthly pool divided equally by {config.periodDays} days. Constant allowance regardless of previous days.
-            </p>
-          </div>
-
-          <div
-            onClick={() => setBudgetMode('smart')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              config.budgetMode === 'smart'
-                ? 'bg-flexible-green/15 border-flexible-green shadow-lg shadow-flexible-green/10'
-                : 'bg-obsidian-950/70 border-white/5 hover:border-white/15'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-flexible-green">Smart Mode</span>
-              <span className="text-xs font-mono font-bold text-flexible-mint">{formatCurrency(ledger.smartDailyRecommended)}/d</span>
-            </div>
-            <p className="text-xs text-slate-300 font-medium">
-              Dynamically recalculates: Remaining Money ÷ Remaining Days ({ledger.daysRemaining} days left). Automatically adapts!
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Tier 1 Vault Settings */}
       <div className="p-6 rounded-3xl bg-obsidian-900 border border-vault-purple/30 space-y-4">
         <div className="flex items-center justify-between">

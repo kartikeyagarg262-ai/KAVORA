@@ -23,20 +23,20 @@ export const GreetingHeader: React.FC<GreetingHeaderProps> = ({ onOpenAddExpense
   });
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2">
+    <div className="flex items-center justify-between gap-3 py-1">
       <div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-flexible-green uppercase tracking-wider mb-1">
-          <Sparkles size={14} />
-          <span>3-Tier Smart System Active</span>
+        <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-flexible-green uppercase tracking-wider mb-0.5">
+          <Sparkles size={12} />
+          <span>3-Tier Vault Active</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+        <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
           {getGreeting()}, <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-flexible-mint">{config.userFullName}</span> 👋
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400 mt-0.5 flex items-center gap-2">
-          <Calendar size={14} className="text-slate-500" />
+        <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+          <Calendar size={12} className="text-slate-500" />
           <span>{todayFormatted}</span>
           <span className="text-slate-600">•</span>
-          <span className="text-slate-300 font-medium">Cycle Day {ledger.currentDayIndex} of {config.periodDays}</span>
+          <span className="text-slate-300 font-medium">Day {ledger.currentDayIndex}/{config.periodDays}</span>
         </p>
       </div>
 

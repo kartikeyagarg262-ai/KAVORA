@@ -30,7 +30,7 @@ export const MoneyFlowWidget: React.FC = () => {
       id: 4,
       title: 'Tier 2: Daily Budget 💳',
       amount: `${formatCurrency(ledger.todayBudget)} / day`,
-      desc: `Allocated per day (${config.budgetMode === 'fixed' ? 'Fixed: total available ÷ 30' : 'Smart: remaining available ÷ remaining days'}). Today spent: ₹${ledger.todaySpent}.`,
+      desc: `Allocated daily: ₹${ledger.availableSpendingMoney} ÷ ${config.periodDays} days. Today spent: ₹${ledger.todaySpent}.`,
     },
     {
       id: 5,
@@ -41,9 +41,9 @@ export const MoneyFlowWidget: React.FC = () => {
   ];
 
   return (
-    <div className="rounded-3xl bg-gradient-to-b from-obsidian-900 to-obsidian-950 border border-white/10 p-6 shadow-xl relative overflow-hidden">
+    <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-b from-obsidian-900 to-obsidian-950 border border-white/10 p-4 sm:p-6 shadow-xl relative overflow-hidden">
       {/* Background Decorative lines */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">

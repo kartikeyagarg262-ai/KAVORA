@@ -108,126 +108,118 @@ export const TierCards: React.FC = () => {
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* TIER 1 — PROTECTED SAVINGS 🔒 */}
-        <div className="relative group overflow-hidden rounded-3xl glass-card-vault p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-vault-purple/10 flex flex-col justify-between">
+        <div className="relative group overflow-hidden rounded-2xl sm:rounded-3xl glass-card-vault p-4 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-vault-purple/10 flex flex-col justify-between">
           <div className="relative z-10">
             {/* Header / Lock Emblem */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-vault-purple/20 border border-vault-purple/30 flex items-center justify-center text-vault-purple shadow-lg shadow-vault-purple/20">
-                  <Lock size={20} className="text-vault-purple" />
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-vault-purple/20 border border-vault-purple/30 flex items-center justify-center text-vault-purple shadow-md">
+                  <Lock size={16} className="text-vault-purple sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-vault-purple/90">
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-vault-purple/90">
                     TIER 1 • SECURED
                   </span>
-                  <h3 className="text-base font-bold text-white flex items-center gap-1.5">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
                     Protected Savings
                   </h3>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    setModalTab('deposit');
-                    setShowVaultModal(true);
-                  }}
-                  className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-vault-purple/20 text-vault-gold hover:bg-vault-purple/35 border border-vault-purple/40 font-bold transition-all shadow-sm"
-                  title="Add Money (Gift from relative / cash)"
-                >
-                  <Plus size={12} strokeWidth={3} />
-                  <span>Add Money</span>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setModalTab('deposit');
+                  setShowVaultModal(true);
+                }}
+                className="flex items-center gap-1 text-[10.5px] px-2.5 py-1 rounded-lg bg-vault-purple/25 text-vault-gold hover:bg-vault-purple/35 border border-vault-purple/40 font-bold transition-all shadow-sm"
+                title="Add Money (Gift from relative / cash)"
+              >
+                <Plus size={12} strokeWidth={3} />
+                <span>Add Money</span>
+              </button>
             </div>
 
             {/* Amount */}
-            <div className="my-2">
-              <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-display">
+            <div className="my-1.5 sm:my-2">
+              <div className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight font-display">
                 {formatCurrency(ledger.protectedSavings, { privacy: privacyMode })}
               </div>
-              <p className="text-xs text-slate-400 mt-1 font-medium">
-                "Money secured for your future"
+              <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 font-medium">
+                Money secured for your future
               </p>
 
               {ledger.extraVaultDeposits > 0 && (
-                <div className="flex items-center gap-1.5 mt-2 text-[11px] text-vault-gold font-semibold">
-                  <Gift size={13} />
-                  <span>Includes {formatCurrency(ledger.extraVaultDeposits, { privacy: privacyMode })} extra gifts / deposits</span>
+                <div className="flex items-center gap-1.5 mt-1.5 text-[10.5px] text-vault-gold font-semibold">
+                  <Gift size={12} />
+                  <span>+{formatCurrency(ledger.extraVaultDeposits, { privacy: privacyMode })} extra gifts added</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Bottom Security Note & Action Buttons */}
-          <div className="relative z-10 mt-5 pt-3 border-t border-vault-purple/20 space-y-2">
-            <div className="flex items-center justify-between gap-2">
+          <div className="relative z-10 mt-3 sm:mt-5 pt-2.5 border-t border-vault-purple/20 space-y-2">
+            <div className="flex items-center justify-between gap-2 text-[10.5px]">
               <button
                 onClick={() => {
                   setModalTab('alter');
                   setShowVaultModal(true);
                 }}
-                className="text-[11px] text-slate-300 hover:text-white underline font-medium"
+                className="text-slate-300 hover:text-white underline font-medium"
               >
                 Alter Base (₹{config.protectedSavings})
               </button>
 
               <button
                 onClick={() => setActiveTab('history')}
-                className="flex items-center gap-1 text-[11px] text-vault-purple hover:underline font-bold"
+                className="flex items-center gap-1 text-vault-purple hover:underline font-bold"
               >
-                <History size={12} />
-                <span>Vault History</span>
+                <History size={11} />
+                <span>History</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-2 text-[11px] text-vault-purple/90 bg-vault-purple/10 p-2.5 rounded-xl border border-vault-purple/20">
-              <ShieldCheck size={16} className="shrink-0 text-vault-purple" />
-              <span>Vault locked. Protected from daily overspending.</span>
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-vault-purple/90 bg-vault-purple/10 p-2 sm:p-2.5 rounded-xl border border-vault-purple/20">
+              <ShieldCheck size={14} className="shrink-0 text-vault-purple" />
+              <span>Vault locked. Excluded from daily spending.</span>
             </div>
           </div>
-
-          {/* Subtle Ambient Background Icon */}
-          <Lock 
-            size={120} 
-            className="absolute -right-4 -bottom-6 text-vault-purple/5 pointer-events-none transform -rotate-12" 
-          />
         </div>
 
         {/* TIER 2 — DAILY SPENDING 💳 */}
-        <div className="relative group overflow-hidden rounded-3xl glass-card-daily p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-spending-cyan/10 flex flex-col justify-between">
+        <div className="relative group overflow-hidden rounded-2xl sm:rounded-3xl glass-card-daily p-4 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-spending-cyan/10 flex flex-col justify-between">
           <div className="relative z-10">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-spending-cyan/20 border border-spending-cyan/30 flex items-center justify-center text-spending-cyan shadow-lg shadow-spending-cyan/20">
-                  <Wallet size={20} className="text-spending-cyan" />
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-spending-cyan/20 border border-spending-cyan/30 flex items-center justify-center text-spending-cyan shadow-md">
+                  <Wallet size={16} className="text-spending-cyan sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-spending-cyan/90">
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-spending-cyan/90">
                     TIER 2 • DAILY LIMIT
                   </span>
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="text-sm sm:text-base font-bold text-white">
                     Today's Budget
                   </h3>
                 </div>
               </div>
 
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-spending-cyan/15 text-spending-cyan border border-spending-cyan/30 font-bold">
-                {config.budgetMode === 'smart' ? 'Smart Mode' : 'Fixed Mode'}
+              <span className="text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-md bg-spending-cyan/15 text-spending-cyan border border-spending-cyan/30 font-bold">
+                Allowance
               </span>
             </div>
 
             {/* Budget Amount */}
-            <div className="my-2">
-              <div className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-display">
+            <div className="my-1.5 sm:my-2">
+              <div className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight font-display">
                 {formatCurrency(ledger.todayBudget, { privacy: privacyMode })}
               </div>
-              <div className="flex items-center justify-between text-xs text-slate-400 mt-2 font-mono">
+              <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 mt-1.5 font-mono">
                 <span>Spent: <b className="text-slate-200">{formatCurrency(ledger.todaySpent, { privacy: privacyMode })}</b></span>
                 <span>
                   {ledger.todayRemaining >= 0 ? (
-                    <>Remaining: <b className="text-flexible-green font-bold">{formatCurrency(ledger.todayRemaining, { privacy: privacyMode })}</b></>
+                    <>Left: <b className="text-flexible-green font-bold">{formatCurrency(ledger.todayRemaining, { privacy: privacyMode })}</b></>
                   ) : (
                     <>Over: <b className="text-rose-400 font-bold">{formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</b></>
                   )}
@@ -236,8 +228,8 @@ export const TierCards: React.FC = () => {
             </div>
 
             {/* Progress Bar Indicator */}
-            <div className="mt-3">
-              <div className="w-full h-2 bg-obsidian-950 rounded-full overflow-hidden border border-white/5">
+            <div className="mt-2.5 sm:mt-3">
+              <div className="w-full h-1.5 sm:h-2 bg-obsidian-950 rounded-full overflow-hidden border border-white/5">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${
                     ledger.todayStatus === 'over' 
@@ -253,34 +245,34 @@ export const TierCards: React.FC = () => {
           </div>
 
           {/* Dynamic Daily Status Indicator */}
-          <div className="relative z-10 mt-5 pt-3 border-t border-white/10">
+          <div className="relative z-10 mt-3 sm:mt-5 pt-2.5 border-t border-white/10">
             {ledger.todayStatus === 'under' && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-flexible-green bg-flexible-green/10 p-2.5 rounded-xl border border-flexible-green/20">
-                <CheckCircle2 size={16} className="shrink-0 text-flexible-green" />
-                <span>🟢 You are {formatCurrency(ledger.todayRemaining, { privacy: privacyMode })} under budget.</span>
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-flexible-green bg-flexible-green/10 p-2 sm:p-2.5 rounded-xl border border-flexible-green/20">
+                <CheckCircle2 size={14} className="shrink-0 text-flexible-green" />
+                <span>🟢 {formatCurrency(ledger.todayRemaining, { privacy: privacyMode })} under budget</span>
               </div>
             )}
 
             {ledger.todayStatus === 'exact' && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-amber-300 bg-amber-400/10 p-2.5 rounded-xl border border-amber-400/20">
-                <AlertCircle size={16} className="shrink-0 text-amber-400" />
-                <span>🟡 You used your complete daily budget.</span>
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-amber-300 bg-amber-400/10 p-2 sm:p-2.5 rounded-xl border border-amber-400/20">
+                <AlertCircle size={14} className="shrink-0 text-amber-400" />
+                <span>🟡 Used complete daily budget</span>
               </div>
             )}
 
             {ledger.todayStatus === 'over' && (
-              <div className="flex flex-col gap-1 text-xs text-rose-300 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 font-medium">
+              <div className="flex flex-col gap-0.5 text-[11px] sm:text-xs text-rose-300 bg-rose-500/10 p-2 sm:p-2.5 rounded-xl border border-rose-500/20 font-medium">
                 <div className="flex items-center gap-1.5 font-bold text-rose-400">
-                  <AlertTriangle size={15} className="shrink-0" />
-                  <span>🔴 You are {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })} over budget.</span>
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>🔴 {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })} over budget</span>
                 </div>
                 {ledger.todayDeficit > 0 ? (
-                  <p className="text-[11px] text-rose-400/90 font-medium">
-                    ⚠️ Your Flexible Savings cannot cover this entire overspending!
+                  <p className="text-[10px] text-rose-400 font-medium">
+                    ⚠️ Deficit exceeds Flexible Savings!
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-300">
-                    Deducted {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })} from Flexible Savings 🟢.
+                  <p className="text-[10px] text-slate-300">
+                    Absorbed by Flexible Savings 🟢
                   </p>
                 )}
               </div>
@@ -289,56 +281,50 @@ export const TierCards: React.FC = () => {
         </div>
 
         {/* TIER 3 — FLEXIBLE SAVINGS 🟢 (HERO CARD) */}
-        <div className="relative group overflow-hidden rounded-3xl glass-card-flexible p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-flexible-green/20 flex flex-col justify-between border-2 border-flexible-green/40">
-          {/* Top highlight glow */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-flexible-green/15 rounded-full blur-2xl pointer-events-none" />
-
+        <div className="relative group overflow-hidden rounded-2xl sm:rounded-3xl glass-card-flexible p-4 sm:p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-flexible-green/20 flex flex-col justify-between border-2 border-flexible-green/40">
           <div className="relative z-10">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-flexible-green/20 border border-flexible-green/40 flex items-center justify-center text-flexible-green shadow-lg shadow-flexible-green/30 animate-pulse-slow">
-                  <Sparkles size={20} className="text-flexible-green" />
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-flexible-green/20 border border-flexible-green/40 flex items-center justify-center text-flexible-green shadow-md animate-pulse-slow">
+                  <Sparkles size={16} className="text-flexible-green sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-flexible-green">
-                      TIER 3 • HERO FEATURE
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-flexible-green animate-ping" />
-                  </div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-1.5">
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-flexible-green">
+                    TIER 3 • HERO CUSHION
+                  </span>
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
                     Flexible Savings
                   </h3>
                 </div>
               </div>
 
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-flexible-green/20 text-flexible-mint border border-flexible-green/30 font-bold">
+              <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-flexible-green/20 text-flexible-mint border border-flexible-green/30 font-bold">
                 Auto-Roll
               </span>
             </div>
 
             {/* Amount */}
-            <div className="my-2">
-              <div className="text-3xl sm:text-4xl font-extrabold text-flexible-mint tracking-tight font-display flex items-baseline gap-2">
-                <span>{formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}</span>
+            <div className="my-1.5 sm:my-2">
+              <div className="text-2xl sm:text-4xl font-extrabold text-flexible-mint tracking-tight font-display">
+                {formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}
               </div>
-              <p className="text-xs text-slate-300 mt-1 font-medium">
-                "Money saved from previous days"
+              <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 font-medium">
+                Accumulates daily surplus & absorbs overspending
               </p>
             </div>
           </div>
 
           {/* Bottom Absorption Explainer */}
-          <div className="relative z-10 mt-5 pt-3 border-t border-flexible-green/20 space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-slate-300 bg-flexible-green/10 p-2.5 rounded-xl border border-flexible-green/20">
+          <div className="relative z-10 mt-3 sm:mt-5 pt-2.5 border-t border-flexible-green/20 space-y-1.5">
+            <div className="flex items-center justify-between text-[10.5px] sm:text-[11px] text-slate-300 bg-flexible-green/10 p-2 sm:p-2.5 rounded-xl border border-flexible-green/20">
               <div className="flex items-center gap-1.5">
-                <TrendingUp size={14} className="text-flexible-green" />
-                <span>Daily surplus flows here automatically</span>
+                <TrendingUp size={13} className="text-flexible-green" />
+                <span>Daily surplus flows here</span>
               </div>
-              <span className="text-flexible-green font-bold">+ Daily Left</span>
+              <span className="text-flexible-green font-bold">+ Surplus</span>
             </div>
-            <div className="text-[10.5px] text-slate-400 leading-tight flex items-center justify-between">
+            <div className="text-[10px] sm:text-[10.5px] text-slate-400 flex items-center justify-between pt-0.5">
               <span>⚡ Absorbs overspending automatically</span>
               <button 
                 onClick={() => setActiveTab('history')}

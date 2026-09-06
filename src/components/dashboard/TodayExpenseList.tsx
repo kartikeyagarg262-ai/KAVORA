@@ -19,25 +19,25 @@ export const TodayExpenseList: React.FC<TodayExpenseListProps> = ({ onOpenAddExp
 
   return (
     <>
-      <div className="rounded-3xl bg-obsidian-900 border border-white/10 p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
+      <div className="rounded-2xl sm:rounded-3xl bg-obsidian-900 border border-white/10 p-4 sm:p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div>
-            <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
               <span>Today's Expenses</span>
-              <span className="px-2 py-0.5 rounded-full bg-white/5 text-xs text-slate-300 font-mono">
+              <span className="px-2 py-0.5 rounded-full bg-white/5 text-[11px] text-slate-300 font-mono">
                 {todayExpenses.length} items
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Total spent today: <b className="text-white font-mono">{formatCurrency(ledger.todaySpent)}</b> of <b className="text-spending-cyan font-mono">{formatCurrency(ledger.todayBudget)}</b>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+              Spent: <b className="text-white font-mono">{formatCurrency(ledger.todaySpent)}</b> of <b className="text-spending-cyan font-mono">{formatCurrency(ledger.todayBudget)}</b>
             </p>
           </div>
 
           <button
             onClick={onOpenAddExpense}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-200 hover:text-white transition-all border border-white/5"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-200 hover:text-white transition-all border border-white/5"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             <span>Add</span>
           </button>
         </div>

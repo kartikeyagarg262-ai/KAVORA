@@ -32,11 +32,11 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-obsidian-950/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-obsidian-950/90 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           {/* Logo & Tagline */}
-          <div className="cursor-pointer" onClick={() => setActiveTab('home')}>
-            <Logo size="md" showTagline={true} />
+          <div className="cursor-pointer shrink-0" onClick={() => setActiveTab('home')}>
+            <Logo size="sm" showTagline={false} />
           </div>
 
           {/* Center Navigation Links (Desktop) */}
@@ -84,21 +84,21 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Right Action Icons */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             {/* "Afford?" Quick Simulator Button */}
             <button
               onClick={() => setShowAffordModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-spending-cyan/15 hover:bg-spending-cyan/25 text-spending-cyan border border-spending-cyan/30 text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-spending-cyan/15 hover:bg-spending-cyan/25 text-spending-cyan border border-spending-cyan/30 text-xs font-bold transition-all shadow-sm"
               title="Can I Afford This? Purchase Simulator"
             >
               <Target size={14} />
-              <span className="hidden sm:inline">Afford?</span>
+              <span className="text-[11px] sm:text-xs">Afford?</span>
             </button>
 
             {/* Privacy Mode Eye Toggle */}
             <button
               onClick={togglePrivacyMode}
-              className={`p-2 rounded-xl border transition-all ${
+              className={`p-1.5 sm:p-2 rounded-xl border transition-all ${
                 privacyMode 
                   ? 'bg-amber-400/15 border-amber-400/30 text-amber-400' 
                   : 'bg-obsidian-900 border-white/10 text-slate-400 hover:text-white'
@@ -106,24 +106,24 @@ export const Navbar: React.FC = () => {
               title={privacyMode ? 'Turn off Privacy Mode' : 'Hide balances (Privacy Mode)'}
               aria-label="Privacy mode"
             >
-              {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
+              {privacyMode ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
 
             {/* PIN Lock Button if enabled */}
             {isPinEnabled && (
               <button
                 onClick={lockApp}
-                className="p-2 rounded-xl bg-obsidian-900 border border-white/10 text-slate-400 hover:text-white transition-all"
+                className="hidden sm:flex p-2 rounded-xl bg-obsidian-900 border border-white/10 text-slate-400 hover:text-white transition-all"
                 title="Lock App with PIN"
               >
-                <Lock size={16} />
+                <Lock size={15} />
               </button>
             )}
 
-            {/* Sound Toggle */}
+            {/* Sound Toggle (hidden on small mobile to save space) */}
             <button
               onClick={toggleSound}
-              className={`p-2 rounded-xl border transition-all ${
+              className={`hidden sm:flex p-2 rounded-xl border transition-all ${
                 soundEnabled 
                   ? 'bg-obsidian-900 border-white/10 text-slate-300 hover:text-white' 
                   : 'bg-obsidian-900 border-white/5 text-slate-500 hover:text-slate-400'
@@ -131,27 +131,27 @@ export const Navbar: React.FC = () => {
               title={soundEnabled ? 'Mute micro-sounds' : 'Enable micro-sounds'}
               aria-label="Sound settings"
             >
-              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
             </button>
 
             {/* Notification Bell */}
             <button
               onClick={() => setShowNotifs(true)}
-              className="relative p-2 rounded-xl bg-obsidian-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all"
+              className="relative p-1.5 sm:p-2 rounded-xl bg-obsidian-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition-all"
               aria-label="Notifications"
             >
-              <Bell size={16} />
+              <Bell size={15} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-flexible-green text-[10px] font-bold text-obsidian-950 animate-pulse">
+                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-flexible-green text-[9px] font-bold text-obsidian-950 animate-pulse">
                   {unreadCount}
                 </span>
               )}
             </button>
 
-            {/* User Profile Pill */}
+            {/* User Profile Avatar */}
             <button
               onClick={() => setActiveTab('profile')}
-              className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-gradient-to-r from-obsidian-900 to-obsidian-850 border border-white/10 hover:border-white/20 transition-all text-xs font-medium text-slate-200"
+              className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1.5 rounded-full bg-gradient-to-r from-obsidian-900 to-obsidian-850 border border-white/10 hover:border-white/20 transition-all text-xs font-medium text-slate-200"
             >
               {profile?.avatar_url ? (
                 <img
@@ -164,7 +164,7 @@ export const Navbar: React.FC = () => {
                   {displayInitial}
                 </div>
               )}
-              <span className="hidden sm:inline font-semibold truncate max-w-[120px]">{displayName}</span>
+              <span className="hidden md:inline font-semibold truncate max-w-[100px]">{displayName}</span>
             </button>
           </div>
         </div>

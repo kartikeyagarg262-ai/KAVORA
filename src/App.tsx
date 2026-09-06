@@ -38,16 +38,16 @@ const MainLayout: React.FC = () => {
       <Navbar />
 
       {/* Main App Container */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-12">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-24 md:pb-12">
         {activeTab === 'home' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Greeting Header */}
             <GreetingHeader onOpenAddExpense={() => setIsAddExpenseOpen(true)} />
 
             {/* Feature 6: Daily Streak & Financial Discipline Score */}
             <DisciplineStreakWidget />
 
-            {/* Total Monthly Money & Mode Overview */}
+            {/* Total Monthly Money & Overview */}
             <MonthlyOverviewCard />
 
             {/* 3 Main Premium Tier Cards: 🔒 Protected, 💳 Daily, 🟢 Flexible */}
