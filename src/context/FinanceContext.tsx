@@ -61,6 +61,7 @@ interface FinanceContextType {
   completeOnboarding: (newConfig: BudgetConfig) => Promise<void>;
   resetOnboarding: () => void;
   resetToDemoData: () => void;
+  clearAllData: () => Promise<void>;
   toggleSound: () => boolean;
   soundEnabled: boolean;
 }
@@ -789,6 +790,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setActiveTab('home');
   };
 
+  const clearAllData = async () => {
+    sound.playTap();
+    // 1. Wipe local memory
+    setExpenses([]);
+    setVaultTransactions([]);
+    setGoals([]);
+    localStorage.removeItem(STORAGE_KEYS.EXPENSES);
+    localStorage.removeItem(STORAGE_KEYS.VAULT_TXS);
+    localStorage.removeItem(STORAGE_KEYS.GOALS);
+
+    // 2. If connected to Supabase cloud, delete all records for this user
+    if (user && isConfigured) {
+      try {
+        await Promise.all([
+          supabase.from('expenses').delete().eq('user_id', user.id),
+          supabase.from('vault_transactions').delete().eq('user_id', user.id),
+          supabase.from('savings_goals').delete().eq('user_id', user.id),
+        ]);
+      } catch (err) {
+        console.error('Error clearing cloud data:', err);
+      }
+    }
+
+    // 3. Trigger clean onboarding
+    setIsOnboarded(false);
+  };
+
   const toggleSound = () => {
     const newState = sound.toggleSound();
     setSoundEnabled(newState);
@@ -837,6 +865,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         completeOnboarding,
         resetOnboarding,
         resetToDemoData,
+        clearAllData,
         toggleSound,
         soundEnabled,
       }}

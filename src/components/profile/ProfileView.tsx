@@ -34,6 +34,7 @@ export const ProfileView: React.FC = () => {
     soundEnabled, 
     resetOnboarding, 
     resetToDemoData,
+    clearAllData,
     updateProtectedSavings,
     isPinEnabled,
     pinCode,
@@ -306,28 +307,31 @@ export const ProfileView: React.FC = () => {
         </button>
       </div>
 
-      {/* Data Management / Demo Reset */}
-      <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 space-y-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Demo & Testing Tools</h3>
+      {/* Data Management: Clear All Data */}
+      <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 space-y-3">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Account Data Management</h3>
         <p className="text-xs text-slate-400">
-          Easily restart the 6-screen onboarding or reload Kartik's pre-configured scenario (₹5,000 monthly, ₹500 vault, ₹150 daily budget, ₹300 flexible savings).
+          Reset all expenses, vault records, savings goals, and start fresh with a clean slate.
         </p>
 
-        <div className="flex flex-wrap gap-3 pt-2">
+        <div className="pt-2 flex flex-wrap gap-3">
           <button
-            onClick={resetToDemoData}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-flexible-green/15 text-flexible-mint hover:bg-flexible-green/25 border border-flexible-green/30 text-xs font-bold transition-all"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to remove all data and reset to a clean account?')) {
+                clearAllData();
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-bold transition-all"
           >
-            <RefreshCw size={15} />
-            <span>Restore Kartik's Demo State</span>
+            <RotateCcw size={15} />
+            <span>Clear All Data & Start Clean</span>
           </button>
 
           <button
             onClick={resetOnboarding}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-all"
           >
-            <RotateCcw size={15} />
-            <span>Replay 6-Screen Onboarding Flow</span>
+            <span>Restart Onboarding Setup</span>
           </button>
         </div>
       </div>
