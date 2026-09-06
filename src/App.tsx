@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
+import { LoginScreen } from './components/auth/LoginScreen';
 import { Navbar } from './components/layout/Navbar';
 import { BottomNav } from './components/layout/BottomNav';
 import { GreetingHeader } from './components/dashboard/GreetingHeader';
@@ -16,7 +18,7 @@ import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { PinLockScreen } from './components/security/PinLockScreen';
 import { Logo } from './components/common/Logo';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
   const { isOnboarded, activeTab, setActiveTab } = useFinance();
@@ -105,10 +107,39 @@ const MainLayout: React.FC = () => {
   );
 };
 
-export default function App() {
+const AuthGate: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-obsidian-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-flexible-green to-spending-cyan flex items-center justify-center shadow-xl shadow-flexible-green/20 mb-6 animate-pulse">
+          <Logo size="lg" showTagline={false} />
+        </div>
+        <div className="flex items-center gap-2 text-flexible-green text-sm font-semibold">
+          <Loader2 size={18} className="animate-spin" />
+          <span>Authenticating KAVORA...</span>
+        </div>
+        <p className="text-xs text-slate-500 mt-2">Loading your private 3-Tier cloud vault</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
   return (
     <FinanceProvider>
       <MainLayout />
     </FinanceProvider>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
   );
 }

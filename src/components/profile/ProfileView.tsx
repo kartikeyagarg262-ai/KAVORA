@@ -14,9 +14,13 @@ import {
   Bell, 
   KeyRound,
   ShieldAlert,
-  Smartphone
+  Smartphone,
+  LogOut,
+  Mail,
+  Shield
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 
@@ -37,9 +41,11 @@ export const ProfileView: React.FC = () => {
     lockApp
   } = useFinance();
 
+  const { profile, user, signOut, isConfigured } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState(config.userFullName);
+  const [nameInput, setNameInput] = useState(profile?.full_name || config.userFullName);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // PIN settings state
   const [pinInput, setPinInput] = useState(pinCode);
@@ -61,22 +67,38 @@ export const ProfileView: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const userDisplayName = profile?.full_name || config.userFullName || 'KAVORA User';
+  const userEmail = profile?.email || user?.email || 'user@kavora.app';
+  const userAvatar = profile?.avatar_url;
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-extrabold text-white tracking-tight">Settings & Profile</h2>
         <p className="text-xs text-slate-400 mt-0.5">
-          Manage your KAVORA 3-Tier preferences, PIN protection, Protected Vault, and financial modes
+          Manage your KAVORA 3-Tier preferences, Google account, PIN protection, and Vault settings
         </p>
       </div>
 
-      {/* Profile Card */}
+      {/* Profile & Google Account Card */}
       <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-flexible-green to-spending-cyan flex items-center justify-center text-obsidian-950 font-extrabold text-2xl shadow-lg shadow-flexible-green/20">
-            {config.userFullName.charAt(0).toUpperCase()}
-          </div>
+          {userAvatar ? (
+            <img
+              src={userAvatar}
+              alt={userDisplayName}
+              className="w-14 h-14 rounded-2xl object-cover border-2 border-flexible-green shadow-lg shadow-flexible-green/20"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-flexible-green to-spending-cyan flex items-center justify-center text-obsidian-950 font-extrabold text-2xl shadow-lg shadow-flexible-green/20">
+              {userDisplayName.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div>
             {isEditingName ? (
               <div className="flex items-center gap-2">
@@ -96,7 +118,7 @@ export const ProfileView: React.FC = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white">{config.userFullName}</h3>
+                <h3 className="text-lg font-bold text-white">{userDisplayName}</h3>
                 <button
                   onClick={() => setIsEditingName(true)}
                   className="text-xs text-spending-cyan hover:underline font-medium"
@@ -105,24 +127,75 @@ export const ProfileView: React.FC = () => {
                 </button>
               </div>
             )}
-            <p className="text-xs text-slate-400 mt-0.5">Personal Finance Tier 3 Account</p>
+            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+              <Mail size={12} className="text-slate-500" />
+              <span>{userEmail}</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-flexible-green font-medium flex items-center gap-1">
+                <Shield size={11} />
+                {isConfigured ? 'Google Protected' : 'Demo Account'}
+              </span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={toggleSound}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
               soundEnabled 
                 ? 'bg-obsidian-850 border-white/15 text-white' 
                 : 'bg-obsidian-950 border-white/5 text-slate-500'
             }`}
           >
-            {soundEnabled ? <Volume2 size={16} className="text-flexible-green" /> : <VolumeX size={16} />}
-            <span>{soundEnabled ? 'Micro-Sounds On' : 'Muted'}</span>
+            {soundEnabled ? <Volume2 size={15} className="text-flexible-green" /> : <VolumeX size={15} />}
+            <span>{soundEnabled ? 'Sound On' : 'Muted'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition-all"
+            title="Sign out of KAVORA"
+          >
+            <LogOut size={15} />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
+
+      {/* Sign Out Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-obsidian-900 border border-white/15 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center mx-auto">
+              <LogOut size={24} />
+            </div>
+            <div className="text-center">
+              <h3 className="text-base font-bold text-white">Sign Out of KAVORA?</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Your 3-Tier finances and expenses are securely saved in your private cloud account. You can log back in with Google anytime.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl bg-obsidian-800 hover:bg-obsidian-750 text-white text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  handleSignOut();
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Feature 5: Security & 4-Digit PIN Lock */}
       <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 space-y-4">

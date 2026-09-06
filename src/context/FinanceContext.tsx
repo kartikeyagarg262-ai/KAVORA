@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   BudgetConfig, 
@@ -13,6 +13,8 @@ import {
 import { calculateFinancialLedger } from '../utils/calculations';
 import { createInitialSeedData } from '../utils/seedData';
 import { sound } from '../utils/sound';
+import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface FinanceContextType {
   config: BudgetConfig;
@@ -24,6 +26,8 @@ interface FinanceContextType {
   notificationSettings: NotificationSettings;
   isOnboarded: boolean;
   activeTab: string;
+  isDataLoading: boolean;
+  dataSyncError: string | null;
   setActiveTab: (tab: string) => void;
   // Privacy & PIN Lock
   privacyMode: boolean;
@@ -35,26 +39,26 @@ interface FinanceContextType {
   lockApp: () => void;
   updatePinSettings: (enabled: boolean, newPin?: string) => void;
   // Expense Actions
-  addExpense: (expenseData: Omit<Expense, 'id' | 'createdAt'>) => { status: 'ok' | 'overspent'; deficit: number };
-  editExpense: (id: string, updated: Partial<Expense>) => void;
-  deleteExpense: (id: string) => void;
+  addExpense: (expenseData: Omit<Expense, 'id' | 'createdAt'>) => Promise<{ status: 'ok' | 'overspent'; deficit: number }>;
+  editExpense: (id: string, updated: Partial<Expense>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
   // Vault Actions
-  addVaultDeposit: (depositData: { amount: number; source: string; note?: string; date?: string; time?: string }) => void;
-  withdrawFromVault: (withdrawData: { amount: number; source: string; note?: string; date?: string; time?: string }) => boolean;
-  deleteVaultTransaction: (id: string) => void;
+  addVaultDeposit: (depositData: { amount: number; source: string; note?: string; date?: string; time?: string }) => Promise<void>;
+  withdrawFromVault: (withdrawData: { amount: number; source: string; note?: string; date?: string; time?: string }) => Promise<boolean>;
+  deleteVaultTransaction: (id: string) => Promise<void>;
   // Goals Actions
-  addGoal: (goal: Omit<SavingsGoal, 'id' | 'savedAmount' | 'completed'>) => void;
-  deleteGoal: (id: string) => void;
-  addFundsToGoal: (id: string, amount: number) => boolean;
+  addGoal: (goal: Omit<SavingsGoal, 'id' | 'savedAmount' | 'completed'>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  addFundsToGoal: (id: string, amount: number) => Promise<boolean>;
   // Config & Notification Actions
-  updateConfig: (updated: Partial<BudgetConfig>) => void;
-  setBudgetMode: (mode: BudgetMode) => void;
-  updateProtectedSavings: (newAmount: number) => void;
-  updateNotificationSettings: (settings: Partial<NotificationSettings>) => void;
+  updateConfig: (updated: Partial<BudgetConfig>) => Promise<void>;
+  setBudgetMode: (mode: BudgetMode) => Promise<void>;
+  updateProtectedSavings: (newAmount: number) => Promise<void>;
+  updateNotificationSettings: (settings: Partial<NotificationSettings>) => Promise<void>;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   triggerSimulatedNotification: (type: NotificationItem['type']) => void;
-  completeOnboarding: (newConfig: BudgetConfig) => void;
+  completeOnboarding: (newConfig: BudgetConfig) => Promise<void>;
   resetOnboarding: () => void;
   resetToDemoData: () => void;
   toggleSound: () => boolean;
@@ -77,120 +81,183 @@ const STORAGE_KEYS = {
 };
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, profile, isConfigured } = useAuth();
   const seed = useMemo(() => createInitialSeedData(), []);
 
-  // State initialization
-  const [config, setConfig] = useState<BudgetConfig>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CONFIG);
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* fallback */ }
-    }
-    return seed.config;
-  });
+  // Financial States
+  const [config, setConfig] = useState<BudgetConfig>(seed.config);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [vaultTransactions, setVaultTransactions] = useState<VaultTransaction[]>([]);
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(seed.notifications);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(seed.notificationSettings);
+  const [isOnboarded, setIsOnboarded] = useState<boolean>(true);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
+  const [dataSyncError, setDataSyncError] = useState<string | null>(null);
 
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* fallback */ }
-    }
-    return seed.expenses;
-  });
-
-  const [vaultTransactions, setVaultTransactions] = useState<VaultTransaction[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.VAULT_TXS);
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* fallback */ }
-    }
-    return seed.vaultTransactions;
-  });
-
-  const [goals, setGoals] = useState<SavingsGoal[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.GOALS);
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* fallback */ }
-    }
-    return seed.goals;
-  });
-
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* fallback */ }
-    }
-    return seed.notifications;
-  });
-
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.NOTIF_SETTINGS);
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* fallback */ }
-    }
-    return seed.notificationSettings;
-  });
-
-  const [isOnboarded, setIsOnboarded] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ONBOARDED);
-    return saved !== null ? saved === 'true' : true;
-  });
-
-  // Feature 5: Privacy Mode & PIN
-  const [privacyMode, setPrivacyMode] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.PRIVACY) === 'true';
-  });
-
-  const [isPinEnabled, setIsPinEnabled] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.PIN_ENABLED) === 'true';
-  });
-
-  const [pinCode, setPinCode] = useState<string>(() => {
-    return localStorage.getItem(STORAGE_KEYS.PIN_CODE) || '1234';
-  });
-
+  // Privacy & PIN Lock States
+  const [privacyMode, setPrivacyMode] = useState<boolean>(false);
+  const [isPinEnabled, setIsPinEnabled] = useState<boolean>(false);
+  const [pinCode, setPinCode] = useState<string>('1234');
   const [isLocked, setIsLocked] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<string>('home');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => sound.isEnabled());
 
-  // Persistence effects
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
-  }, [config]);
+  // Cloud Sync: Fetch authenticated user's private data from Supabase
+  const loadUserDataFromSupabase = useCallback(async (userId: string) => {
+    setIsDataLoading(true);
+    setDataSyncError(null);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
-  }, [expenses]);
+    try {
+      // 1. Fetch Active Monthly Budget
+      const { data: budgetData, error: budgetError } = await supabase
+        .from('monthly_budgets')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.VAULT_TXS, JSON.stringify(vaultTransactions));
-  }, [vaultTransactions]);
+      if (budgetError) throw budgetError;
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(goals));
-  }, [goals]);
+      if (budgetData) {
+        setConfig({
+          userFullName: profile?.full_name || 'KAVORA User',
+          monthlyIncome: Number(budgetData.monthly_income),
+          protectedSavings: Number(budgetData.protected_savings),
+          startDate: budgetData.start_date,
+          periodDays: Number(budgetData.period_days),
+          budgetMode: budgetData.budget_mode as BudgetMode,
+        });
+        setIsOnboarded(true);
+      } else {
+        // New user has no active budget yet -> Redirect to Onboarding Flow!
+        setIsOnboarded(false);
+      }
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  }, [notifications]);
+      // 2. Fetch Vault Transactions
+      const { data: vaultData, error: vaultError } = await supabase
+        .from('vault_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NOTIF_SETTINGS, JSON.stringify(notificationSettings));
-  }, [notificationSettings]);
+      if (vaultError) throw vaultError;
+      if (vaultData) {
+        setVaultTransactions(vaultData.map(v => ({
+          id: v.id,
+          type: v.type,
+          amount: Number(v.amount),
+          source: v.source,
+          note: v.note || undefined,
+          date: v.date,
+          time: v.time || '12:00',
+          createdAt: new Date(v.created_at).getTime(),
+        })));
+      }
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ONBOARDED, String(isOnboarded));
-  }, [isOnboarded]);
+      // 3. Fetch Expenses
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PRIVACY, String(privacyMode));
-  }, [privacyMode]);
+      if (expenseError) throw expenseError;
+      if (expenseData) {
+        setExpenses(expenseData.map(e => ({
+          id: e.id,
+          amount: Number(e.amount),
+          category: e.category,
+          description: e.description || '',
+          date: e.date,
+          time: e.time || '12:00',
+          createdAt: new Date(e.created_at).getTime(),
+        })));
+      }
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PIN_ENABLED, String(isPinEnabled));
-  }, [isPinEnabled]);
+      // 4. Fetch Savings Goals
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('savings_goals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
+      if (goalsError) throw goalsError;
+      if (goalsData) {
+        setGoals(goalsData.map(g => ({
+          id: g.id,
+          title: g.title,
+          targetAmount: Number(g.target_amount),
+          savedAmount: Number(g.saved_amount),
+          icon: g.icon || '🎯',
+          category: g.category || 'General',
+          targetDate: g.target_date || undefined,
+          completed: Boolean(g.completed),
+          linkedTier: g.linked_tier as 'protected' | 'flexible',
+        })));
+      }
+
+      // 5. Fetch User Settings
+      const { data: settingsData } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (settingsData) {
+        setPrivacyMode(Boolean(settingsData.privacy_mode));
+        setIsPinEnabled(Boolean(settingsData.pin_enabled));
+        if (settingsData.pin_code) setPinCode(settingsData.pin_code);
+        if (settingsData.notification_settings) {
+          setNotificationSettings(settingsData.notification_settings);
+        }
+      }
+    } catch (err: unknown) {
+      console.error('Supabase fetch error:', err);
+      const msg = err instanceof Error ? err.message : 'Error syncing cloud data';
+      setDataSyncError(msg);
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [profile?.full_name]);
+
+  // Handle Authentication State Changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PIN_CODE, pinCode);
-  }, [pinCode]);
+    if (user) {
+      if (isConfigured) {
+        loadUserDataFromSupabase(user.id);
+      } else {
+        // Fallback for Demo User when .env is not yet set
+        const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+        const savedExpenses = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+        const savedVault = localStorage.getItem(STORAGE_KEYS.VAULT_TXS);
+        const savedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
+
+        if (savedConfig) try { setConfig(JSON.parse(savedConfig)); } catch {}
+        else setConfig({ ...seed.config, userFullName: profile?.full_name || 'Kartik' });
+
+        if (savedExpenses) try { setExpenses(JSON.parse(savedExpenses)); } catch {}
+        else setExpenses(seed.expenses);
+
+        if (savedVault) try { setVaultTransactions(JSON.parse(savedVault)); } catch {}
+        else setVaultTransactions(seed.vaultTransactions);
+
+        if (savedGoals) try { setGoals(JSON.parse(savedGoals)); } catch {}
+        else setGoals(seed.goals);
+
+        setIsOnboarded(true);
+      }
+    } else {
+      // User logged out: clear memory so User B never sees User A's data!
+      setExpenses([]);
+      setVaultTransactions([]);
+      setGoals([]);
+      setIsOnboarded(false);
+    }
+  }, [user, isConfigured, loadUserDataFromSupabase, profile?.full_name, seed]);
 
   // Compute 3-Tier Financial Ledger
   const ledger = useMemo(() => {
@@ -198,9 +265,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [config, expenses, vaultTransactions]);
 
   // Toggle Privacy
-  const togglePrivacyMode = () => {
+  const togglePrivacyMode = async () => {
     sound.playTap();
-    setPrivacyMode(prev => !prev);
+    const newPrivacy = !privacyMode;
+    setPrivacyMode(newPrivacy);
+
+    if (user && isConfigured) {
+      await supabase.from('user_settings').upsert({
+        user_id: user.id,
+        privacy_mode: newPrivacy,
+      });
+    }
   };
 
   // Lock and Unlock
@@ -219,26 +294,56 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLocked(true);
   };
 
-  const updatePinSettings = (enabled: boolean, newPin?: string) => {
+  const updatePinSettings = async (enabled: boolean, newPin?: string) => {
     sound.playTap();
     setIsPinEnabled(enabled);
     if (newPin) setPinCode(newPin);
+
+    if (user && isConfigured) {
+      await supabase.from('user_settings').upsert({
+        user_id: user.id,
+        pin_enabled: enabled,
+        pin_code: newPin || pinCode,
+      });
+    }
   };
 
   // Expense Management
-  const addExpense = (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
-    const newId = 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+  const addExpense = async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
+    const tempId = 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const newExpense: Expense = {
       ...expenseData,
-      id: newId,
+      id: tempId,
       createdAt: Date.now(),
     };
 
+    // Optimistic local update
     const updatedExpenses = [newExpense, ...expenses];
     setExpenses(updatedExpenses);
 
     const newLedger = calculateFinancialLedger(config, updatedExpenses, vaultTransactions);
     const todayRemaining = newLedger.todayRemaining;
+
+    // Cloud persistence
+    if (user && isConfigured) {
+      try {
+        const { data, error } = await supabase.from('expenses').insert({
+          user_id: user.id,
+          amount: newExpense.amount,
+          category: newExpense.category,
+          description: newExpense.description,
+          date: newExpense.date,
+          time: newExpense.time,
+        }).select('id').single();
+
+        if (data && !error) {
+          // Replace tempId with Supabase UUID
+          setExpenses(prev => prev.map(e => e.id === tempId ? { ...e, id: data.id } : e));
+        }
+      } catch (err) {
+        console.error('Failed to sync expense to cloud:', err);
+      }
+    }
 
     if (todayRemaining < 0) {
       sound.playWarning();
@@ -265,25 +370,48 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const editExpense = (id: string, updated: Partial<Expense>) => {
+  const editExpense = async (id: string, updated: Partial<Expense>) => {
     sound.playTap();
     setExpenses(prev => prev.map(exp => exp.id === id ? { ...exp, ...updated } : exp));
+
+    if (user && isConfigured) {
+      try {
+        await supabase.from('expenses').update({
+          amount: updated.amount,
+          category: updated.category,
+          description: updated.description,
+          date: updated.date,
+          time: updated.time,
+        }).eq('id', id).eq('user_id', user.id);
+      } catch (err) {
+        console.error('Failed to edit expense in cloud:', err);
+      }
+    }
   };
 
-  const deleteExpense = (id: string) => {
+  const deleteExpense = async (id: string) => {
     sound.playTap();
     setExpenses(prev => prev.filter(exp => exp.id !== id));
+
+    if (user && isConfigured) {
+      try {
+        await supabase.from('expenses').delete().eq('id', id).eq('user_id', user.id);
+      } catch (err) {
+        console.error('Failed to delete expense in cloud:', err);
+      }
+    }
   };
 
   // Vault Management
-  const addVaultDeposit = (depositData: { amount: number; source: string; note?: string; date?: string; time?: string }) => {
+  const addVaultDeposit = async (depositData: { amount: number; source: string; note?: string; date?: string; time?: string }) => {
     sound.playSuccess();
     const today = new Date();
     const dateStr = depositData.date || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const timeStr = depositData.time || `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+    const tempId = 'vault_dep_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
     const newTx: VaultTransaction = {
-      id: 'vault_dep_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: tempId,
       type: 'deposit',
       amount: depositData.amount,
       source: depositData.source || 'Extra Deposit',
@@ -295,6 +423,26 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setVaultTransactions(prev => [newTx, ...prev]);
+
+    if (user && isConfigured) {
+      try {
+        const { data, error } = await supabase.from('vault_transactions').insert({
+          user_id: user.id,
+          type: 'deposit',
+          amount: newTx.amount,
+          source: newTx.source,
+          note: newTx.note,
+          date: newTx.date,
+          time: newTx.time,
+        }).select('id').single();
+
+        if (data && !error) {
+          setVaultTransactions(prev => prev.map(v => v.id === tempId ? { ...v, id: data.id } : v));
+        }
+      } catch (err) {
+        console.error('Failed to sync vault deposit:', err);
+      }
+    }
 
     const notif: NotificationItem = {
       id: 'notif_vault_' + Date.now(),
@@ -308,7 +456,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setNotifications(prev => [notif, ...prev]);
   };
 
-  const withdrawFromVault = (withdrawData: { amount: number; source: string; note?: string; date?: string; time?: string }): boolean => {
+  const withdrawFromVault = async (withdrawData: { amount: number; source: string; note?: string; date?: string; time?: string }): Promise<boolean> => {
     if (withdrawData.amount > ledger.protectedSavings) {
       sound.playWarning();
       return false;
@@ -318,9 +466,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const today = new Date();
     const dateStr = withdrawData.date || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const timeStr = withdrawData.time || `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+    const tempId = 'vault_wd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
     const newTx: VaultTransaction = {
-      id: 'vault_wd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: tempId,
       type: 'withdrawal',
       amount: -withdrawData.amount,
       source: withdrawData.source || 'Vault Withdrawal',
@@ -332,36 +481,95 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setVaultTransactions(prev => [newTx, ...prev]);
+
+    if (user && isConfigured) {
+      try {
+        const { data, error } = await supabase.from('vault_transactions').insert({
+          user_id: user.id,
+          type: 'withdrawal',
+          amount: newTx.amount,
+          source: newTx.source,
+          note: newTx.note,
+          date: newTx.date,
+          time: newTx.time,
+        }).select('id').single();
+
+        if (data && !error) {
+          setVaultTransactions(prev => prev.map(v => v.id === tempId ? { ...v, id: data.id } : v));
+        }
+      } catch (err) {
+        console.error('Failed to sync vault withdrawal:', err);
+      }
+    }
+
     return true;
   };
 
-  const deleteVaultTransaction = (id: string) => {
+  const deleteVaultTransaction = async (id: string) => {
     sound.playTap();
     setVaultTransactions(prev => prev.filter(t => t.id !== id));
+
+    if (user && isConfigured) {
+      try {
+        await supabase.from('vault_transactions').delete().eq('id', id).eq('user_id', user.id);
+      } catch (err) {
+        console.error('Failed to delete vault transaction:', err);
+      }
+    }
   };
 
-  // Feature 2: Savings Goals Management
-  const addGoal = (goalData: Omit<SavingsGoal, 'id' | 'savedAmount' | 'completed'>) => {
+  // Savings Goals Management
+  const addGoal = async (goalData: Omit<SavingsGoal, 'id' | 'savedAmount' | 'completed'>) => {
     sound.playSuccess();
+    const tempId = 'goal_' + Date.now();
     const newGoal: SavingsGoal = {
       ...goalData,
-      id: 'goal_' + Date.now(),
+      id: tempId,
       savedAmount: 0,
       completed: false,
     };
     setGoals(prev => [newGoal, ...prev]);
+
+    if (user && isConfigured) {
+      try {
+        const { data, error } = await supabase.from('savings_goals').insert({
+          user_id: user.id,
+          title: newGoal.title,
+          target_amount: newGoal.targetAmount,
+          saved_amount: 0,
+          icon: newGoal.icon,
+          category: newGoal.category,
+          target_date: newGoal.targetDate,
+          completed: false,
+          linked_tier: newGoal.linkedTier,
+        }).select('id').single();
+
+        if (data && !error) {
+          setGoals(prev => prev.map(g => g.id === tempId ? { ...g, id: data.id } : g));
+        }
+      } catch (err) {
+        console.error('Failed to save goal to cloud:', err);
+      }
+    }
   };
 
-  const deleteGoal = (id: string) => {
+  const deleteGoal = async (id: string) => {
     sound.playTap();
     setGoals(prev => prev.filter(g => g.id !== id));
+
+    if (user && isConfigured) {
+      try {
+        await supabase.from('savings_goals').delete().eq('id', id).eq('user_id', user.id);
+      } catch (err) {
+        console.error('Failed to delete goal in cloud:', err);
+      }
+    }
   };
 
-  const addFundsToGoal = (id: string, amount: number): boolean => {
+  const addFundsToGoal = async (id: string, amount: number): Promise<boolean> => {
     const targetGoal = goals.find(g => g.id === id);
     if (!targetGoal) return false;
 
-    // Check available pool based on linked tier
     const availablePool = targetGoal.linkedTier === 'protected' 
       ? ledger.protectedSavings 
       : ledger.currentFlexibleSavings;
@@ -372,44 +580,70 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     sound.playSuccess();
-    setGoals(prev => prev.map(g => {
-      if (g.id === id) {
-        const newSaved = g.savedAmount + amount;
-        const isComplete = newSaved >= g.targetAmount;
-        if (isComplete && !g.completed) {
-          try {
-            confetti({ particleCount: 70, spread: 60 });
-          } catch { /* ignore */ }
-        }
-        return {
-          ...g,
-          savedAmount: newSaved,
+    const newSaved = targetGoal.savedAmount + amount;
+    const isComplete = newSaved >= targetGoal.targetAmount;
+
+    if (isComplete && !targetGoal.completed) {
+      try {
+        confetti({ particleCount: 70, spread: 60 });
+      } catch {}
+    }
+
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, savedAmount: newSaved, completed: isComplete } : g));
+
+    if (user && isConfigured) {
+      try {
+        await supabase.from('savings_goals').update({
+          saved_amount: newSaved,
           completed: isComplete,
-        };
+        }).eq('id', id).eq('user_id', user.id);
+      } catch (err) {
+        console.error('Failed to update goal funds in cloud:', err);
       }
-      return g;
-    }));
+    }
 
     return true;
   };
 
   // Config Updates
-  const updateConfig = (updated: Partial<BudgetConfig>) => {
-    setConfig(prev => ({ ...prev, ...updated }));
+  const updateConfig = async (updated: Partial<BudgetConfig>) => {
+    const newConfig = { ...config, ...updated };
+    setConfig(newConfig);
+
+    if (user && isConfigured) {
+      try {
+        await supabase.from('monthly_budgets').update({
+          monthly_income: newConfig.monthlyIncome,
+          protected_savings: newConfig.protectedSavings,
+          period_days: newConfig.periodDays,
+          budget_mode: newConfig.budgetMode,
+        }).eq('user_id', user.id).eq('is_active', true);
+      } catch (err) {
+        console.error('Failed to update monthly budget in cloud:', err);
+      }
+    }
   };
 
-  const setBudgetMode = (mode: BudgetMode) => {
+  const setBudgetMode = async (mode: BudgetMode) => {
     sound.playTap();
-    setConfig(prev => ({ ...prev, budgetMode: mode }));
+    await updateConfig({ budgetMode: mode });
   };
 
-  const updateProtectedSavings = (newAmount: number) => {
+  const updateProtectedSavings = async (newAmount: number) => {
     sound.playSuccess();
-    setConfig(prev => ({ ...prev, protectedSavings: Math.max(0, newAmount) }));
+    await updateConfig({ protectedSavings: Math.max(0, newAmount) });
   };
 
-  const updateNotificationSettings = (settings: Partial<NotificationSettings>) => {
-    setNotificationSettings(prev => ({ ...prev, ...settings }));
+  const updateNotificationSettings = async (settings: Partial<NotificationSettings>) => {
+    const newSettings = { ...notificationSettings, ...settings };
+    setNotificationSettings(newSettings);
+
+    if (user && isConfigured) {
+      await supabase.from('user_settings').upsert({
+        user_id: user.id,
+        notification_settings: newSettings,
+      });
+    }
   };
 
   const markNotificationAsRead = (id: string) => {
@@ -465,26 +699,76 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setNotifications(prev => [notif, ...prev]);
   };
 
-  const completeOnboarding = (newConfig: BudgetConfig) => {
+  // Complete Onboarding for New User
+  const completeOnboarding = async (newConfig: BudgetConfig) => {
     sound.playSuccess();
     setConfig(newConfig);
     setExpenses([]);
-    const todayStr = newConfig.startDate;
-    setVaultTransactions([
-      {
-        id: 'vault_init_' + Date.now(),
-        type: 'initial',
-        amount: newConfig.protectedSavings,
-        source: 'Monthly Base Allocation',
-        note: 'Initial monthly lock into vault',
-        date: todayStr,
-        time: '00:00',
-        createdAt: Date.now(),
-        balanceAfter: newConfig.protectedSavings,
-      }
-    ]);
     setIsOnboarded(true);
     setActiveTab('home');
+
+    const todayStr = newConfig.startDate;
+
+    if (user && isConfigured) {
+      try {
+        // Deactivate any existing budget
+        await supabase.from('monthly_budgets')
+          .update({ is_active: false })
+          .eq('user_id', user.id);
+
+        // Insert fresh budget
+        await supabase.from('monthly_budgets').insert({
+          user_id: user.id,
+          monthly_income: newConfig.monthlyIncome,
+          protected_savings: newConfig.protectedSavings,
+          start_date: newConfig.startDate,
+          period_days: newConfig.periodDays,
+          budget_mode: newConfig.budgetMode,
+          is_active: true,
+        });
+
+        // Insert initial vault transaction
+        const { data: vData } = await supabase.from('vault_transactions').insert({
+          user_id: user.id,
+          type: 'initial',
+          amount: newConfig.protectedSavings,
+          source: 'Monthly Base Allocation',
+          note: 'Initial monthly lock into vault',
+          date: todayStr,
+          time: '00:00',
+        }).select('id').single();
+
+        setVaultTransactions([
+          {
+            id: vData?.id || 'vault_init_' + Date.now(),
+            type: 'initial',
+            amount: newConfig.protectedSavings,
+            source: 'Monthly Base Allocation',
+            note: 'Initial monthly lock into vault',
+            date: todayStr,
+            time: '00:00',
+            createdAt: Date.now(),
+            balanceAfter: newConfig.protectedSavings,
+          }
+        ]);
+      } catch (err) {
+        console.error('Error saving onboarding data to cloud:', err);
+      }
+    } else {
+      setVaultTransactions([
+        {
+          id: 'vault_init_' + Date.now(),
+          type: 'initial',
+          amount: newConfig.protectedSavings,
+          source: 'Monthly Base Allocation',
+          note: 'Initial monthly lock into vault',
+          date: todayStr,
+          time: '00:00',
+          createdAt: Date.now(),
+          balanceAfter: newConfig.protectedSavings,
+        }
+      ]);
+    }
   };
 
   const resetOnboarding = () => {
@@ -523,6 +807,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         notificationSettings,
         isOnboarded,
         activeTab,
+        isDataLoading,
+        dataSyncError,
         setActiveTab,
         privacyMode,
         togglePrivacyMode,

@@ -65,36 +65,103 @@ KAVORA eliminates the anxiety of managing monthly money through an automated, in
 
 ---
 
-## 🛠️ Tech Stack
+## 🔐 Cloud Authentication & Private Multi-User Data
 
-- **Framework**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS (Dark theme `#06070a`, Obsidian glassmorphism, glowing borders)
-- **Visuals & Charts**: Recharts, Lucide Icons, Canvas-Confetti
-- **Audio Feedback**: Tactile micro-interactions via Web Audio API
-- **Persistence**: Reactive localStorage with instant calculation cascade
+KAVORA comes with enterprise-grade multi-user cloud synchronization powered by **Supabase PostgreSQL** and **Row Level Security (RLS)**:
+
+- **Google Sign-In**: 1-click authentication using Google OAuth.
+- **Strict Row Level Security (RLS)**: Every user's budget, vault transactions, expenses, savings goals, and settings are strictly partitioned using PostgreSQL `auth.uid() = user_id`. User A can **never** access or view User B's financial data.
+- **Onboarding vs Returning User Routing**: New users are guided through the 6-step setup flow; returning users are immediately routed to their private cloud dashboard.
+- **Resilient Fallback Mode**: If Supabase credentials are not yet configured in `.env`, KAVORA provides a 1-click **Preview as Demo User** option for instant local exploration.
 
 ---
 
-## ⚡ Quick Start
+## 🛠️ Tech Stack
+
+- **Framework**: React 18 + TypeScript + Vite
+- **Cloud Backend**: Supabase (PostgreSQL 15 + GoTrue Auth + Row Level Security)
+- **Mobile Packaging**: Capacitor Android (`com.kavora.app`)
+- **Styling**: Tailwind CSS (Dark theme `#06070a`, Obsidian glassmorphism, glowing borders)
+- **Visuals & Charts**: Recharts, Lucide Icons, Canvas-Confetti
+- **Audio Feedback**: Tactile micro-interactions via Web Audio API
+
+---
+
+## ⚡ Setup & Configuration Guide
+
+### 1. Supabase Cloud Setup
+
+1. Go to [Supabase](https://supabase.com) and create a free project.
+2. Open the **SQL Editor** in your Supabase dashboard.
+3. Open [`supabase_schema.sql`](./supabase_schema.sql) from this repository, copy all contents, and click **Run**.
+   - This creates tables: `profiles`, `monthly_budgets`, `vault_transactions`, `expenses`, `savings_goals`, `user_settings`.
+   - Enables Row Level Security (RLS) on all tables with `auth.uid() = user_id` policies.
+   - Sets up the trigger `on_auth_user_created` to automatically populate user profiles on Google OAuth sign-in.
+
+### 2. Configure Google OAuth in Supabase
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a project and set up OAuth Consent Screen (Application type: *External*).
+3. Create **OAuth 2.0 Client IDs** (Web application).
+4. In your Supabase dashboard, go to **Authentication > Providers > Google**:
+   - Turn **Enable Google** ON.
+   - Paste your **Client ID** and **Client Secret** from Google Cloud Console.
+   - Copy the **Callback URL (for OAuth)** from Supabase (e.g., `https://<your-project-id>.supabase.co/auth/v1/callback`) and paste it into **Authorized redirect URIs** in your Google Cloud Console.
+
+### 3. Configure Local Environment
+
+Copy `.env.example` to `.env`:
 
 ```bash
-# Clone the repository
-git clone https://github.com/kartikeyagarg262-ai/KAVORA.git
+cp .env.example .env
+```
 
-# Navigate to project directory
-cd KAVORA
+Add your Supabase Project URL and Public Anon Key:
 
-# Install dependencies
+```env
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+---
+
+## 🚀 Running the App
+
+### Web Local Development
+```bash
 npm install
-
-# Start local development server
 npm run dev
+```
+Open [http://localhost:5173/](http://localhost:5173/) in your browser.
 
-# Build for production
+### Web Production Build
+```bash
 npm run build
 ```
 
-Open [http://localhost:5173/](http://localhost:5173/) in your browser.
+---
+
+## 📱 Mobile App Setup (Capacitor Android)
+
+KAVORA is pre-configured with Capacitor for native Android APK generation:
+
+```bash
+# 1. Build the production web bundle
+npm run build
+
+# 2. Add Android platform (first time only)
+npx cap add android
+
+# 3. Sync web assets and plugins to Android
+npx cap sync android
+
+# 4. Open project in Android Studio
+npx cap open android
+```
+
+Inside Android Studio:
+1. Connect your Android device or start an emulator.
+2. Click **Run > Run 'app'** or build an APK via **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
 
 ---
 

@@ -85,12 +85,12 @@ export const TierCards: React.FC = () => {
     }
   };
 
-  const handleWithdrawSubmit = (e: React.FormEvent) => {
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const num = Number(withdrawAmount);
     if (!num || num <= 0) return;
 
-    const ok = withdrawFromVault({
+    const ok = await withdrawFromVault({
       amount: num,
       source: withdrawReason.trim() || 'Emergency Need',
     });

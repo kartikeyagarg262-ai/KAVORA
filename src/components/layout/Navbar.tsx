@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Volume2, VolumeX, Shield, Sparkles, User, Eye, EyeOff, Target, Lock } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
+import { useAuth } from '../../context/AuthContext';
 import { Logo } from '../common/Logo';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { AffordabilityCheckerModal } from '../tools/AffordabilityCheckerModal';
@@ -21,10 +22,13 @@ export const Navbar: React.FC = () => {
     addExpense
   } = useFinance();
   
+  const { profile, user } = useAuth();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showAffordModal, setShowAffordModal] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const displayName = profile?.full_name || config.userFullName || 'User';
+  const displayInitial = (displayName.charAt(0) || 'U').toUpperCase();
 
   return (
     <>
@@ -149,10 +153,18 @@ export const Navbar: React.FC = () => {
               onClick={() => setActiveTab('profile')}
               className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-gradient-to-r from-obsidian-900 to-obsidian-850 border border-white/10 hover:border-white/20 transition-all text-xs font-medium text-slate-200"
             >
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-flexible-green to-spending-cyan flex items-center justify-center text-obsidian-950 font-bold text-[11px]">
-                {config.userFullName.charAt(0).toUpperCase()}
-              </div>
-              <span className="hidden sm:inline font-semibold">{config.userFullName}</span>
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  className="w-6 h-6 rounded-full object-cover border border-white/20"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-flexible-green to-spending-cyan flex items-center justify-center text-obsidian-950 font-bold text-[11px]">
+                  {displayInitial}
+                </div>
+              )}
+              <span className="hidden sm:inline font-semibold truncate max-w-[120px]">{displayName}</span>
             </button>
           </div>
         </div>

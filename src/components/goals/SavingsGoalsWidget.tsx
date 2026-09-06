@@ -40,13 +40,13 @@ export const SavingsGoalsWidget: React.FC = () => {
     setShowAddGoalModal(false);
   };
 
-  const handleAddFundsSubmit = (e: React.FormEvent) => {
+  const handleAddFundsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fundGoalModal) return;
     const amt = Number(fundAmount);
     if (!amt || amt <= 0) return;
 
-    const ok = addFundsToGoal(fundGoalModal.id, amt);
+    const ok = await addFundsToGoal(fundGoalModal.id, amt);
     if (ok) {
       setFundGoalModal(null);
       setFundAmount('200');
