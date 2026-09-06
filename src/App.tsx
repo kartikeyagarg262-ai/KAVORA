@@ -17,6 +17,7 @@ import { ProfileView } from './components/profile/ProfileView';
 import { AddExpenseModal } from './components/expenses/AddExpenseModal';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { PinLockScreen } from './components/security/PinLockScreen';
+import { NotificationPromptModal } from './components/notifications/NotificationPromptModal';
 import { Logo } from './components/common/Logo';
 import { Plus, Loader2 } from 'lucide-react';
 
@@ -31,6 +32,9 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-obsidian-950 text-slate-100 flex flex-col selection:bg-flexible-green selection:text-black relative">
+      {/* Direct Mobile Status Bar Notification Permission Modal */}
+      <NotificationPromptModal />
+
       {/* Feature 5: PIN Lock Screen Overlay */}
       <PinLockScreen />
 
