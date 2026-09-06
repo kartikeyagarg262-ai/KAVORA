@@ -251,6 +251,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { days: 30, title: 'Standard 30 Days', desc: 'Standard monthly pocket money cycle' },
+                { days: 25, title: '25 Days Cycle', desc: 'Custom 25-day student allowance cycle' },
                 { days: 31, title: 'Full 31 Days', desc: 'Long calendar months' },
                 { days: 15, title: 'Bi-Weekly (15 Days)', desc: 'Half-month allowance' },
                 { days: 7, title: 'Weekly (7 Days)', desc: 'Short sprint cycle' },
@@ -259,19 +260,39 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                   key={item.days}
                   type="button"
                   onClick={() => setPeriodDays(item.days)}
-                  className={`p-4 rounded-2xl border text-left transition-all ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all ${
                     periodDays === item.days
                       ? 'bg-flexible-green/15 border-flexible-green shadow-lg shadow-flexible-green/10'
                       : 'bg-obsidian-950/70 border-white/5 hover:border-white/15'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">{item.title}</span>
+                    <span className="text-xs sm:text-sm font-bold text-white">{item.title}</span>
                     <span className="text-xs font-mono font-bold text-flexible-green">{item.days}d</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">{item.desc}</p>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
                 </button>
               ))}
+            </div>
+
+            {/* Custom Days Input */}
+            <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-300">Or Enter Any Custom Days (1–90 Days):</span>
+                <span className="text-flexible-green font-mono font-bold">{periodDays} Days Selected</span>
+              </div>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  min="1"
+                  max="90"
+                  value={periodDays}
+                  onChange={(e) => setPeriodDays(Math.max(1, Math.min(90, Number(e.target.value) || 1)))}
+                  className="w-full px-4 py-3 bg-obsidian-900 border border-white/15 rounded-xl text-white font-mono text-xl font-bold focus:outline-none focus:border-flexible-green"
+                  placeholder="e.g. 25"
+                />
+                <span className="absolute right-4 text-xs font-bold text-flexible-green">days cycle</span>
+              </div>
             </div>
           </div>
         )}
@@ -300,6 +321,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                   <span>🔒</span>
                 </span>
                 <span className="font-bold text-vault-purple text-sm">{formatCurrency(protectedSavings)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs py-1.5 border-b border-white/5">
+                <span className="text-slate-400">Budget Period:</span>
+                <span className="font-bold text-flexible-mint text-sm">{periodDays} Days</span>
               </div>
               <div className="flex items-center justify-between text-xs py-1.5 border-b border-white/5">
                 <span className="text-slate-400">Available Spending:</span>

@@ -17,7 +17,9 @@ import {
   Smartphone,
   LogOut,
   Mail,
-  Shield
+  Shield,
+  Calendar,
+  Wallet
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { useAuth } from '../../context/AuthContext';
@@ -51,6 +53,40 @@ export const ProfileView: React.FC = () => {
   // PIN settings state
   const [pinInput, setPinInput] = useState(pinCode);
   const [isChangingPin, setIsChangingPin] = useState(false);
+
+  // Budget & Period configuration state
+  const [periodInput, setPeriodInput] = useState(String(config.periodDays || 30));
+  const [incomeInput, setIncomeInput] = useState(String(config.monthlyIncome || 5000));
+  const [baseSavingsInput, setBaseSavingsInput] = useState(String(config.protectedSavings || 0));
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [savedConfigMessage, setSavedConfigMessage] = useState('');
+
+  const handleSavePeriod = (days: number) => {
+    if (days >= 1 && days <= 90) {
+      updateConfig({ periodDays: days });
+      setPeriodInput(String(days));
+      setSavedConfigMessage(`Cycle set to ${days} days!`);
+      setTimeout(() => setSavedConfigMessage(''), 2500);
+    }
+  };
+
+  const handleSaveBudgetConfig = () => {
+    const pDays = Math.max(1, Math.min(90, Number(periodInput) || 30));
+    const mIncome = Math.max(100, Number(incomeInput) || config.monthlyIncome);
+    const pSavings = Math.max(0, Math.min(mIncome, Number(baseSavingsInput) || 0));
+
+    updateConfig({
+      periodDays: pDays,
+      monthlyIncome: mIncome,
+      protectedSavings: pSavings,
+    });
+    setPeriodInput(String(pDays));
+    setIncomeInput(String(mIncome));
+    setBaseSavingsInput(String(pSavings));
+    setIsEditingBudget(false);
+    setSavedConfigMessage('Budget settings updated successfully!');
+    setTimeout(() => setSavedConfigMessage(''), 2500);
+  };
 
   const handleSaveName = () => {
     if (nameInput.trim()) {
@@ -263,6 +299,160 @@ export const ProfileView: React.FC = () => {
             >
               🔒 Lock App Now
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* Budget & Cycle Period Configuration */}
+      <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-flexible-green/10 text-flexible-green flex items-center justify-center border border-flexible-green/20">
+              <Calendar size={20} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Budget Period & Days Cycle</h3>
+              <p className="text-xs text-slate-400">
+                Current cycle: <b className="text-flexible-green">{config.periodDays || 30} Days</b> (Day {ledger.currentDayIndex}/{config.periodDays || 30})
+              </p>
+            </div>
+          </div>
+
+          <span className="font-mono text-xs sm:text-sm font-bold text-flexible-green bg-flexible-green/10 px-3 py-1 rounded-xl border border-flexible-green/20">
+            {config.periodDays || 30} Days Cycle
+          </span>
+        </div>
+
+        {savedConfigMessage && (
+          <div className="p-3 rounded-xl bg-flexible-green/15 border border-flexible-green/30 text-xs text-flexible-mint font-bold flex items-center gap-2 animate-fadeIn">
+            <Check size={14} />
+            <span>{savedConfigMessage}</span>
+          </div>
+        )}
+
+        {/* Quick presets */}
+        <div className="p-4 rounded-2xl bg-obsidian-950 border border-white/5 space-y-3">
+          <div className="text-xs font-bold text-slate-300">
+            Select Cycle Length:
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[
+              { days: 30, label: '30 Days' },
+              { days: 25, label: '25 Days' },
+              { days: 20, label: '20 Days' },
+              { days: 15, label: '15 Days' },
+              { days: 7, label: '7 Days' },
+            ].map((p) => (
+              <button
+                key={p.days}
+                type="button"
+                onClick={() => handleSavePeriod(p.days)}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all ${
+                  config.periodDays === p.days
+                    ? 'bg-flexible-green text-obsidian-950 border-flexible-green shadow-md shadow-flexible-green/20'
+                    : 'bg-obsidian-900 border-white/10 text-slate-300 hover:text-white hover:border-white/20'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Days Input */}
+          <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label className="text-xs text-slate-400">
+              Or set custom cycle (1–90 days):
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="90"
+                value={periodInput}
+                onChange={(e) => setPeriodInput(e.target.value)}
+                className="w-24 px-3 py-1.5 bg-obsidian-900 border border-white/15 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-flexible-green text-center"
+                placeholder="25"
+              />
+              <button
+                type="button"
+                onClick={() => handleSavePeriod(Number(periodInput))}
+                className="px-3.5 py-1.5 rounded-xl bg-flexible-green text-obsidian-950 font-bold text-xs hover:bg-flexible-mint transition-colors shadow-sm"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed edit toggle */}
+        {!isEditingBudget ? (
+          <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
+            <div className="flex items-center gap-4">
+              <span>Monthly: <b className="text-white font-mono">{formatCurrency(config.monthlyIncome)}</b></span>
+              <span>•</span>
+              <span>Protected: <b className="text-vault-purple font-mono">{formatCurrency(config.protectedSavings)}</b></span>
+              <span>•</span>
+              <span>Daily: <b className="text-flexible-mint font-mono">{formatCurrency(ledger.fixedDailyBudget)}/d</b></span>
+            </div>
+            <button
+              onClick={() => {
+                setIncomeInput(String(config.monthlyIncome));
+                setBaseSavingsInput(String(config.protectedSavings));
+                setPeriodInput(String(config.periodDays));
+                setIsEditingBudget(true);
+              }}
+              className="text-spending-cyan hover:underline font-semibold self-start sm:self-auto"
+            >
+              Edit Monthly Budget & Savings
+            </button>
+          </div>
+        ) : (
+          <div className="p-4 rounded-2xl bg-obsidian-950 border border-white/10 space-y-3 animate-fadeIn">
+            <div className="text-xs font-bold text-white uppercase tracking-wider">
+              Edit Monthly Allocation
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1">Total Monthly Money (₹)</label>
+                <input
+                  type="number"
+                  min="100"
+                  value={incomeInput}
+                  onChange={(e) => setIncomeInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-obsidian-900 border border-white/15 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-spending-cyan"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1">Base Protected Savings (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={baseSavingsInput}
+                  onChange={(e) => setBaseSavingsInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-obsidian-900 border border-white/15 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-vault-purple"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditingBudget(false)}
+                className="px-3 py-1.5 rounded-xl bg-obsidian-850 hover:bg-obsidian-800 text-slate-300 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBudgetConfig}
+                className="px-4 py-1.5 rounded-xl bg-flexible-green text-obsidian-950 text-xs font-bold hover:bg-flexible-mint shadow-md"
+              >
+                Save Budget
+              </button>
+            </div>
           </div>
         )}
       </div>

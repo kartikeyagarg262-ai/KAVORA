@@ -43,9 +43,12 @@ export const calculateFinancialLedger = (
   const { monthlyIncome, protectedSavings: baseProtectedSavings, startDate, periodDays, budgetMode } = config;
 
   // Calculate Extra Vault Deposits & Adjustments (e.g. from relatives, gifts, extra cash)
+  // Note: Skip 'initial' transactions because config.protectedSavings already includes base monthly allocation
   let extraVaultDeposits = 0;
   for (const vt of vaultTransactions) {
-    extraVaultDeposits += vt.amount;
+    if (vt.type !== 'initial') {
+      extraVaultDeposits += vt.amount;
+    }
   }
   const totalProtectedSavings = Math.max(0, baseProtectedSavings + extraVaultDeposits);
 
