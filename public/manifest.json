@@ -1,0 +1,18 @@
+{
+  "name": "KAVORA — Your Money. Your Flow.",
+  "short_name": "KAVORA",
+  "description": "Student & Personal Daily Pocket Money & 3-Tier Expense Flow Manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06070a",
+  "theme_color": "#06070a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/kavora-logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

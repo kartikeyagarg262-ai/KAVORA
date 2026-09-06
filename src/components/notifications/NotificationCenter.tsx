@@ -11,7 +11,9 @@ import {
   Award, 
   FileText,
   Settings,
-  Play
+  Play,
+  Smartphone,
+  Check
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { NotificationType } from '../../types/finance';
@@ -28,7 +30,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
     markAllNotificationsAsRead, 
     triggerSimulatedNotification,
     notificationSettings,
-    updateNotificationSettings
+    updateNotificationSettings,
+    deviceNotificationPermission,
+    requestDeviceNotificationPermission
   } = useFinance();
 
   const [activeTab, setActiveTab] = useState<'inbox' | 'sim' | 'settings'>('inbox');
@@ -116,6 +120,42 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
           </button>
         </div>
 
+        {/* Mobile Status Bar Push Notification Permission Banner */}
+        <div className="p-3.5 bg-obsidian-950/80 border-b border-white/10">
+          {deviceNotificationPermission === 'granted' ? (
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-flexible-green/10 border border-flexible-green/25 text-xs">
+              <div className="flex items-center gap-2 text-flexible-mint">
+                <CheckCheck size={15} />
+                <span className="font-bold text-[11px]">Mobile Status Bar Alerts: Active 📲</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">Top slidebar enabled</span>
+            </div>
+          ) : (
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-spending-cyan/15 to-flexible-green/15 border border-spending-cyan/30 space-y-2">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 rounded-xl bg-spending-cyan/20 text-spending-cyan shrink-0 mt-0.5">
+                  <Smartphone size={16} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Mobile Status Bar Notifications</h4>
+                  <p className="text-[10.5px] text-slate-300 mt-0.5">
+                    Phone ke upar notification bar (slidebar) me alerts paane ke liye permission enable karein.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  await requestDeviceNotificationPermission();
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-spending-cyan text-obsidian-950 text-xs font-bold hover:bg-spending-mint transition-colors shadow-md flex items-center justify-center gap-1.5"
+              >
+                <Bell size={13} />
+                <span>Enable Status Bar Notifications 📲</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Tab 1: Inbox */}
         {activeTab === 'inbox' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -174,7 +214,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
         {activeTab === 'sim' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="p-3 rounded-2xl bg-spending-cyan/10 border border-spending-cyan/20 text-xs text-spending-cyan">
-              💡 Test each scheduled alert type specified in KAVORA:
+              💡 <b>Test Live Alerts:</b> Kisi bhi alert ke aage <b>Play (▶)</b> dabayein — yeh turant aapke phone ke upar notification bar (slidebar) me live pop-up aayega!
             </div>
 
             <div className="space-y-2.5">

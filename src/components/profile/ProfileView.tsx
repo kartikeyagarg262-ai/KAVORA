@@ -41,7 +41,9 @@ export const ProfileView: React.FC = () => {
     isPinEnabled,
     pinCode,
     updatePinSettings,
-    lockApp
+    lockApp,
+    deviceNotificationPermission,
+    requestDeviceNotificationPermission
   } = useFinance();
 
   const { profile, user, signOut, isConfigured } = useAuth();
@@ -479,22 +481,45 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Notifications Drawer Quick Trigger */}
-      <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 flex items-center justify-between">
+      <div className="p-6 rounded-3xl bg-obsidian-900 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 border border-white/5">
+          <div className="w-10 h-10 rounded-2xl bg-flexible-green/10 flex items-center justify-center text-flexible-green border border-flexible-green/20 shrink-0">
             <Bell size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Notification Preferences & Alerts</h3>
-            <p className="text-xs text-slate-400">Morning budget, evening check-in, overspending alarms</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">Mobile Status Bar & Push Alerts</h3>
+              {deviceNotificationPermission === 'granted' ? (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-flexible-green/20 text-flexible-mint font-bold border border-flexible-green/30">
+                  Active 📲
+                </span>
+              ) : (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                  Permission Needed
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400">
+              Morning budget, evening check-in, and instant overspending alerts on your phone
+            </p>
           </div>
         </div>
-        <button
-          onClick={() => setShowNotifSettings(true)}
-          className="px-4 py-2 rounded-xl bg-obsidian-850 hover:bg-obsidian-800 text-xs font-semibold text-white border border-white/10 transition-colors"
-        >
-          Configure
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {deviceNotificationPermission !== 'granted' && (
+            <button
+              onClick={requestDeviceNotificationPermission}
+              className="px-3.5 py-2 rounded-xl bg-spending-cyan text-obsidian-950 text-xs font-bold hover:bg-spending-mint transition-colors shadow-sm"
+            >
+              Enable 📲
+            </button>
+          )}
+          <button
+            onClick={() => setShowNotifSettings(true)}
+            className="px-4 py-2 rounded-xl bg-obsidian-850 hover:bg-obsidian-800 text-xs font-semibold text-white border border-white/10 transition-colors"
+          >
+            Configure
+          </button>
+        </div>
       </div>
 
       {/* Data Management: Clear All Data */}

@@ -15,6 +15,11 @@ import { createInitialSeedData } from '../utils/seedData';
 import { sound } from '../utils/sound';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
+import { 
+  sendDeviceNotification, 
+  requestNotificationPermission, 
+  getNotificationPermission 
+} from '../utils/deviceNotification';
 
 interface FinanceContextType {
   config: BudgetConfig;
@@ -23,6 +28,8 @@ interface FinanceContextType {
   goals: SavingsGoal[];
   ledger: FinancialLedger;
   notifications: NotificationItem[];
+  deviceNotificationPermission: NotificationPermission;
+  requestDeviceNotificationPermission: () => Promise<NotificationPermission>;
   notificationSettings: NotificationSettings;
   isOnboarded: boolean;
   activeTab: string;
@@ -92,6 +99,28 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>(seed.notifications);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(seed.notificationSettings);
+  const [deviceNotificationPermission, setDeviceNotificationPermission] = useState<NotificationPermission>(
+    () => getNotificationPermission()
+  );
+
+  const dispatchNotification = useCallback((notif: NotificationItem) => {
+    setNotifications(prev => [notif, ...prev]);
+    sendDeviceNotification(notif.title, { body: notif.message, tag: notif.id });
+  }, []);
+
+  const requestDeviceNotificationPermission = useCallback(async (): Promise<NotificationPermission> => {
+    const perm = await requestNotificationPermission();
+    setDeviceNotificationPermission(perm);
+    if (perm === 'granted') {
+      sound.playSuccess();
+      sendDeviceNotification('KAVORA Alerts Connected 📲', {
+        body: 'Mobile status bar notifications are now active! Daily budget and overspending alerts will appear in your top slidebar.',
+        tag: 'kavora_perm_granted',
+      });
+    }
+    return perm;
+  }, []);
+
   const [isOnboarded, setIsOnboarded] = useState<boolean>(true);
   const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const [dataSyncError, setDataSyncError] = useState<string | null>(null);
@@ -265,6 +294,51 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return calculateFinancialLedger(config, expenses, vaultTransactions);
   }, [config, expenses, vaultTransactions]);
 
+  // Automated Daily Reminders (Morning Budget & Evening Check-in)
+  useEffect(() => {
+    if (!isOnboarded) return;
+
+    const checkDailyReminders = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const lastMorning = localStorage.getItem('kavora_last_morning_notif');
+      const lastEvening = localStorage.getItem('kavora_last_evening_notif');
+
+      // Morning daily budget notification (between 7:00 AM and 11:59 AM)
+      if (notificationSettings.morningBudget && hour >= 7 && hour < 12 && lastMorning !== todayStr) {
+        localStorage.setItem('kavora_last_morning_notif', todayStr);
+        const notif: NotificationItem = {
+          id: 'morning_' + Date.now(),
+          type: 'morning',
+          title: 'Daily Budget Ready ☀️',
+          message: `Today's allowance is ₹${ledger.todayBudget}. Spend mindfully to grow Flexible Savings!`,
+          timestamp: 'Just now',
+          read: false,
+        };
+        dispatchNotification(notif);
+      }
+
+      // Evening check-in notification (between 7:00 PM and 11:59 PM)
+      if (notificationSettings.eveningReminder && hour >= 19 && lastEvening !== todayStr) {
+        localStorage.setItem('kavora_last_evening_notif', todayStr);
+        const notif: NotificationItem = {
+          id: 'evening_' + Date.now(),
+          type: 'evening',
+          title: 'Evening Expense Check-in 🌙',
+          message: `You spent ₹${ledger.todaySpent} out of ₹${ledger.todayBudget} today. Remember to log any receipts!`,
+          timestamp: 'Just now',
+          read: false,
+        };
+        dispatchNotification(notif);
+      }
+    };
+
+    checkDailyReminders();
+    const timer = setInterval(checkDailyReminders, 60000);
+    return () => clearInterval(timer);
+  }, [isOnboarded, notificationSettings, ledger.todayBudget, ledger.todaySpent, dispatchNotification]);
+
   // Toggle Privacy
   const togglePrivacyMode = async () => {
     sound.playTap();
@@ -362,7 +436,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           read: false,
           meta: { amount: overspentAmount, flexibleRemaining: newLedger.currentFlexibleSavings },
         };
-        setNotifications(prev => [notif, ...prev]);
+        dispatchNotification(notif);
       }
       return { status: 'overspent' as const, deficit: newLedger.todayDeficit };
     } else {
@@ -454,7 +528,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       read: false,
       meta: { amount: depositData.amount },
     };
-    setNotifications(prev => [notif, ...prev]);
+    dispatchNotification(notif);
   };
 
   const withdrawFromVault = async (withdrawData: { amount: number; source: string; note?: string; date?: string; time?: string }): Promise<boolean> => {
@@ -697,7 +771,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       timestamp: 'Just now',
       read: false,
     };
-    setNotifications(prev => [notif, ...prev]);
+    dispatchNotification(notif);
   };
 
   // Complete Onboarding for New User
@@ -832,6 +906,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         goals,
         ledger,
         notifications,
+        deviceNotificationPermission,
+        requestDeviceNotificationPermission,
         notificationSettings,
         isOnboarded,
         activeTab,
