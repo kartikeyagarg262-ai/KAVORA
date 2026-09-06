@@ -41,17 +41,6 @@ export const createInitialSeedData = () => {
       createdAt: Date.now() - 5 * 86400000,
       balanceAfter: 500,
     },
-    {
-      id: 'vault-seed-2',
-      type: 'deposit',
-      amount: 500,
-      source: 'Relative Gift (Chacha ji)',
-      note: 'Family visit cash gift added directly to Protected Vault',
-      date: day3,
-      time: '18:30',
-      createdAt: Date.now() - 3 * 86400000,
-      balanceAfter: 1000,
-    },
   ];
 
   const expenses: Expense[] = [

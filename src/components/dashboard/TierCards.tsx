@@ -26,6 +26,7 @@ export const TierCards: React.FC = () => {
     updateProtectedSavings, 
     addVaultDeposit, 
     withdrawFromVault, 
+    deleteVaultTransaction,
     vaultTransactions,
     setActiveTab,
     privacyMode
@@ -149,9 +150,21 @@ export const TierCards: React.FC = () => {
               </p>
 
               {ledger.extraVaultDeposits > 0 && (
-                <div className="flex items-center gap-1.5 mt-1.5 text-[10.5px] text-vault-gold font-semibold">
-                  <Gift size={12} />
-                  <span>+{formatCurrency(ledger.extraVaultDeposits, { privacy: privacyMode })} extra gifts added</span>
+                <div className="flex items-center justify-between mt-1.5 p-1.5 rounded-lg bg-vault-purple/20 border border-vault-purple/30 text-[10.5px]">
+                  <div className="flex items-center gap-1.5 text-vault-gold font-semibold">
+                    <Gift size={12} />
+                    <span>+{formatCurrency(ledger.extraVaultDeposits, { privacy: privacyMode })} gifts added</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Delete all gift deposits
+                      vaultTransactions.filter(t => t.type === 'deposit').forEach(t => deleteVaultTransaction(t.id));
+                    }}
+                    className="text-[10px] text-rose-400 hover:text-rose-300 hover:underline font-bold px-1.5 py-0.5 rounded bg-rose-500/10"
+                    title="Remove all gift deposits"
+                  >
+                    Clear Gifts (₹0)
+                  </button>
                 </div>
               )}
             </div>
@@ -162,6 +175,7 @@ export const TierCards: React.FC = () => {
             <div className="flex items-center justify-between gap-2 text-[10.5px]">
               <button
                 onClick={() => {
+                  setVaultAmountInput(String(config.protectedSavings));
                   setModalTab('alter');
                   setShowVaultModal(true);
                 }}
