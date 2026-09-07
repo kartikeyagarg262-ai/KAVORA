@@ -9,23 +9,34 @@ import {
 } from '../types/finance';
 
 /**
+ * Formats a Date into local YYYY-MM-DD string according to device's timezone
+ */
+export const getLocalDateString = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Calculates date string + N days (YYYY-MM-DD)
  */
 export const addDaysToDate = (baseDateStr: string, daysToAdd: number): string => {
   const [y, m, d] = baseDateStr.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
+  const date = new Date(y, m - 1, d, 0, 0, 0, 0);
   date.setDate(date.getDate() + daysToAdd);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
 /**
- * Get difference in calendar days between two YYYY-MM-DD dates
+ * Get difference in calendar days between two YYYY-MM-DD dates in local time
  */
 export const getDayDifference = (startDateStr: string, targetDateStr: string): number => {
+  if (!startDateStr || !targetDateStr) return 0;
   const [y1, m1, d1] = startDateStr.split('-').map(Number);
   const [y2, m2, d2] = targetDateStr.split('-').map(Number);
-  const date1 = new Date(y1, m1 - 1, d1).getTime();
-  const date2 = new Date(y2, m2 - 1, d2).getTime();
+  const date1 = new Date(y1, m1 - 1, d1, 0, 0, 0, 0).getTime();
+  const date2 = new Date(y2, m2 - 1, d2, 0, 0, 0, 0).getTime();
   const diffTime = date2 - date1;
   return Math.round(diffTime / (1000 * 60 * 60 * 24));
 };
@@ -39,8 +50,8 @@ export const calculateFinancialLedger = (
   vaultTransactions: VaultTransaction[] = [],
   todayDateStr?: string
 ): FinancialLedger => {
-  const today = todayDateStr || new Date().toISOString().split('T')[0];
-  const { monthlyIncome, protectedSavings: baseProtectedSavings, startDate, periodDays, budgetMode } = config;
+  const today = todayDateStr || getLocalDateString();
+  const { monthlyIncome, protectedSavings: baseProtectedSavings, startDate, periodDays } = config;
 
   // Calculate Extra Vault Deposits & Adjustments (e.g. from relatives, gifts, extra cash)
   // Note: Skip 'initial' transactions because config.protectedSavings already includes base monthly allocation
@@ -54,6 +65,7 @@ export const calculateFinancialLedger = (
 
   // Available Spending Money derived from monthly income minus base protected savings
   const availableSpendingMoney = Math.max(0, monthlyIncome - baseProtectedSavings);
+  // Fixed Daily Budget: Strictly divided by cycle days (e.g. ₹4500 / 30 = ₹150 every day)
   const fixedDailyBudget = Math.round(availableSpendingMoney / (periodDays || 30));
 
   // Determine current cycle day index (1-based, capped at periodDays)
@@ -75,22 +87,15 @@ export const calculateFinancialLedger = (
   const dailyCalculations: DayCalculation[] = [];
   const flexibleTransactions: FlexibleTransaction[] = [];
 
-  // Track remaining money dynamically for Smart Mode
-  let remainingSpendingPool = availableSpendingMoney;
-
   let underBudgetDaysCount = 0;
   let overBudgetDaysCount = 0;
 
   for (let i = 1; i <= periodDays; i++) {
     const dayDate = addDaysToDate(startDate, i - 1);
     const daySpent = expensesByDate[dayDate] || 0;
-    const remainingDaysFromHere = Math.max(1, periodDays - i + 1);
 
-    // Calculate this day's budget
-    let dayBudget = fixedDailyBudget;
-    if (budgetMode === 'smart') {
-      dayBudget = Math.max(0, Math.round(remainingSpendingPool / remainingDaysFromHere));
-    }
+    // Fixed daily budget for every day in the cycle (strictly constant)
+    const dayBudget = fixedDailyBudget;
 
     const remaining = dayBudget - daySpent;
     let status: 'under' | 'exact' | 'over' = 'exact';
@@ -152,7 +157,6 @@ export const calculateFinancialLedger = (
           balanceAfter: runningFlexibleSavings,
         });
       }
-      remainingSpendingPool = Math.max(0, remainingSpendingPool - daySpent);
     } else if (i === currentDayIndex) {
       // Today: If overspent, show impact on Flexible Savings
       if (remaining < 0) {
@@ -178,7 +182,6 @@ export const calculateFinancialLedger = (
           balanceAfter: runningFlexibleSavings,
         });
       }
-      remainingSpendingPool = Math.max(0, remainingSpendingPool - daySpent);
     }
 
     dailyCalculations.push({

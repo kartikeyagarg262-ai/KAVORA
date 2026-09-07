@@ -46,4 +46,20 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(self.registration.showNotification(data.title, options));
+// Handle scheduled alerts from the client (e.g. evening reminder)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+    const { title, body, delayMs } = event.data;
+    if (delayMs && delayMs > 0) {
+      setTimeout(() => {
+        self.registration.showNotification(title, {
+          body,
+          icon: '/kavora-logo.svg',
+          badge: '/kavora-logo.svg',
+          vibrate: [200, 100, 200],
+          tag: 'kavora_sched_' + Date.now(),
+        });
+      }, delayMs);
+    }
+  }
 });

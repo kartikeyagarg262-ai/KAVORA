@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Logo } from '../common/Logo';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { AffordabilityCheckerModal } from '../tools/AffordabilityCheckerModal';
+import { getLocalDateString } from '../../utils/calculations';
 
 export const Navbar: React.FC = () => {
   const { 
@@ -182,7 +183,7 @@ export const Navbar: React.FC = () => {
             amount: amt,
             category: 'shopping',
             description: desc,
-            date: new Date().toISOString().split('T')[0],
+            date: getLocalDateString(),
             time: '12:00',
           });
         }}

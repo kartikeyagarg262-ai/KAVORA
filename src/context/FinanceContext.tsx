@@ -10,7 +10,7 @@ import {
   VaultTransaction,
   SavingsGoal
 } from '../types/finance';
-import { calculateFinancialLedger } from '../utils/calculations';
+import { calculateFinancialLedger, getLocalDateString } from '../utils/calculations';
 import { createInitialSeedData } from '../utils/seedData';
 import { sound } from '../utils/sound';
 import { useAuth } from './AuthContext';
@@ -122,6 +122,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const [isOnboarded, setIsOnboarded] = useState<boolean>(true);
+  const [currentDateStr, setCurrentDateStr] = useState<string>(() => getLocalDateString());
   const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
   const [dataSyncError, setDataSyncError] = useState<string | null>(null);
 
@@ -153,13 +154,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (budgetError) throw budgetError;
 
       if (budgetData) {
+        // Automatically migrate any legacy 'smart' mode to strictly fixed
+        if (budgetData.budget_mode === 'smart') {
+          supabase
+            .from('monthly_budgets')
+            .update({ budget_mode: 'fixed' })
+            .eq('id', budgetData.id)
+            .then(() => {});
+        }
+
         setConfig({
           userFullName: profile?.full_name || 'KAVORA User',
           monthlyIncome: Number(budgetData.monthly_income),
           protectedSavings: Number(budgetData.protected_savings),
           startDate: budgetData.start_date,
           periodDays: Number(budgetData.period_days),
-          budgetMode: budgetData.budget_mode as BudgetMode,
+          budgetMode: 'fixed',
         });
         setIsOnboarded(true);
       } else {
@@ -289,10 +299,31 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user, isConfigured, loadUserDataFromSupabase, profile?.full_name, seed]);
 
-  // Compute 3-Tier Financial Ledger
+  // Monitor midnight date transitions every 10 seconds and on window focus/visibility
+  useEffect(() => {
+    const checkDateTransition = () => {
+      const liveToday = getLocalDateString();
+      if (liveToday !== currentDateStr) {
+        console.log('Midnight rollover detected: date changed to', liveToday);
+        setCurrentDateStr(liveToday);
+      }
+    };
+
+    const interval = setInterval(checkDateTransition, 10000);
+    window.addEventListener('focus', checkDateTransition);
+    document.addEventListener('visibilitychange', checkDateTransition);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkDateTransition);
+      document.removeEventListener('visibilitychange', checkDateTransition);
+    };
+  }, [currentDateStr]);
+
+  // Compute 3-Tier Financial Ledger with live local date
   const ledger = useMemo(() => {
-    return calculateFinancialLedger(config, expenses, vaultTransactions);
-  }, [config, expenses, vaultTransactions]);
+    return calculateFinancialLedger(config, expenses, vaultTransactions, currentDateStr);
+  }, [config, expenses, vaultTransactions, currentDateStr]);
 
   // Automated Daily Reminders (Morning Budget & Evening Check-in)
   useEffect(() => {
@@ -301,12 +332,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const checkDailyReminders = () => {
       const now = new Date();
       const hour = now.getHours();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const todayStr = getLocalDateString(now);
       const lastMorning = localStorage.getItem('kavora_last_morning_notif');
       const lastEvening = localStorage.getItem('kavora_last_evening_notif');
 
-      // Morning daily budget notification (between 7:00 AM and 11:59 AM)
-      if (notificationSettings.morningBudget && hour >= 7 && hour < 12 && lastMorning !== todayStr) {
+      // 1. Morning Daily Budget Notification (send on first visit of day before 6 PM / 18:00)
+      if (notificationSettings.morningBudget && hour < 18 && lastMorning !== todayStr) {
         localStorage.setItem('kavora_last_morning_notif', todayStr);
         const notif: NotificationItem = {
           id: 'morning_' + Date.now(),
@@ -319,14 +350,14 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         dispatchNotification(notif);
       }
 
-      // Evening check-in notification (between 7:00 PM and 11:59 PM)
-      if (notificationSettings.eveningReminder && hour >= 19 && lastEvening !== todayStr) {
+      // 2. Evening Check-in Notification (send in the evening from 6:00 PM / 18:00 onwards)
+      if (notificationSettings.eveningReminder && hour >= 18 && lastEvening !== todayStr) {
         localStorage.setItem('kavora_last_evening_notif', todayStr);
         const notif: NotificationItem = {
           id: 'evening_' + Date.now(),
           type: 'evening',
           title: 'Evening Expense Check-in 🌙',
-          message: `You spent ₹${ledger.todaySpent} out of ₹${ledger.todayBudget} today. Remember to log any receipts!`,
+          message: `You spent ₹${ledger.todaySpent} out of ₹${ledger.todayBudget} today. Remember to log any cash or UPI receipts!`,
           timestamp: 'Just now',
           read: false,
         };
@@ -335,8 +366,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     checkDailyReminders();
-    const timer = setInterval(checkDailyReminders, 60000);
-    return () => clearInterval(timer);
+    const timer = setInterval(checkDailyReminders, 20000);
+    window.addEventListener('focus', checkDailyReminders);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', checkDailyReminders);
+    };
   }, [isOnboarded, notificationSettings, ledger.todayBudget, ledger.todaySpent, dispatchNotification]);
 
   // Toggle Privacy
@@ -396,8 +431,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const updatedExpenses = [newExpense, ...expenses];
     setExpenses(updatedExpenses);
 
-    const newLedger = calculateFinancialLedger(config, updatedExpenses, vaultTransactions);
+    const newLedger = calculateFinancialLedger(config, updatedExpenses, vaultTransactions, currentDateStr);
     const todayRemaining = newLedger.todayRemaining;
+    const todaySpent = newLedger.todaySpent;
+    const todayBudget = newLedger.todayBudget;
 
     // Cloud persistence
     if (user && isConfigured) {
@@ -428,7 +465,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const notif: NotificationItem = {
           id: 'alert_' + Date.now(),
           type: 'overspent',
-          title: 'Overspending Alert',
+          title: 'Overspending Alert 🚨',
           message: newLedger.todayDeficit > 0 
             ? `You exceeded today's budget by ₹${overspentAmount}. Your Flexible Savings cannot cover this entire amount (Deficit: ₹${newLedger.todayDeficit}).`
             : `You exceeded today's budget by ₹${overspentAmount}. ₹${overspentAmount} was deducted from Flexible Savings.`,
@@ -440,7 +477,21 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return { status: 'overspent' as const, deficit: newLedger.todayDeficit };
     } else {
-      sound.playSuccess();
+      // 80% Daily Budget Proximity Warning
+      if (todaySpent >= 0.8 * todayBudget && notificationSettings.overspendingWarning) {
+        sound.playWarning();
+        const notif: NotificationItem = {
+          id: 'warn_' + Date.now(),
+          type: 'warning',
+          title: 'Budget Warning (80% Limit) ⚠️',
+          message: `You've spent ₹${todaySpent} of your ₹${todayBudget} daily allowance. Only ₹${todayRemaining} left today!`,
+          timestamp: 'Just now',
+          read: false,
+        };
+        dispatchNotification(notif);
+      } else {
+        sound.playSuccess();
+      }
       return { status: 'ok' as const, deficit: 0 };
     }
   };

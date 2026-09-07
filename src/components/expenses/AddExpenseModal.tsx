@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, AlertTriangle, CheckCircle, Calendar, Clock, Tag } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { ExpenseCategory } from '../../types/finance';
 import { Modal } from '../common/Modal';
 import { CATEGORIES, formatCurrency } from '../../utils/formatters';
+import { getLocalDateString } from '../../utils/calculations';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
   const [description, setDescription] = useState('');
 
   // Default to today's active date in the ledger
-  const todayStr = ledger.dailyCalculations[ledger.currentDayIndex - 1]?.date || new Date().toISOString().split('T')[0];
+  const todayStr = ledger.dailyCalculations[ledger.currentDayIndex - 1]?.date || getLocalDateString();
   const [date, setDate] = useState(todayStr);
 
   const nowTime = () => {
@@ -26,6 +27,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   };
   const [time, setTime] = useState(nowTime());
+
+  useEffect(() => {
+    if (isOpen) {
+      const activeDate = ledger.dailyCalculations[ledger.currentDayIndex - 1]?.date || getLocalDateString();
+      setDate(activeDate);
+      setTime(nowTime());
+    }
+  }, [isOpen, ledger.currentDayIndex, ledger.dailyCalculations]);
 
   // Quick increment buttons
   const quickPills = [20, 50, 100, 150, 200, 500];
