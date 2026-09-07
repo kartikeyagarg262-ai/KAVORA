@@ -276,6 +276,7 @@ export const calculateFinancialLedger = (
     todayRemaining: todayCalc.remaining,
     todayStatus: todayCalc.status,
     todayDeficit: todayCalc.uncoveredDeficit,
+    todayAbsorbedFromFlexible: todayCalc.overspentDeductedFromFlexible,
     currentDayIndex,
     daysRemaining,
     smartDailyRecommended,

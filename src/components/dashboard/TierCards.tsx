@@ -275,18 +275,35 @@ export const TierCards: React.FC = () => {
             )}
 
             {ledger.todayStatus === 'over' && (
-              <div className="flex flex-col gap-0.5 text-[11px] sm:text-xs text-rose-300 bg-rose-500/10 p-2 sm:p-2.5 rounded-xl border border-rose-500/20 font-medium">
-                <div className="flex items-center gap-1.5 font-bold text-rose-400">
-                  <AlertTriangle size={14} className="shrink-0" />
-                  <span>🔴 {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })} over budget</span>
+              <div className="flex flex-col gap-1.5 text-[11px] sm:text-xs text-rose-300 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 font-medium">
+                <div className="flex items-center justify-between font-bold">
+                  <div className="flex items-center gap-1.5 text-rose-400">
+                    <AlertTriangle size={14} className="shrink-0" />
+                    <span>Over: {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</span>
+                  </div>
+                  {ledger.todayAbsorbedFromFlexible > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-flexible-green/15 text-flexible-green border border-flexible-green/25 font-bold">
+                      -{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })} from Flexible
+                    </span>
+                  )}
                 </div>
+
+                {ledger.todayAbsorbedFromFlexible > 0 && (
+                  <div className="text-[10.5px] text-slate-300 bg-obsidian-950/70 px-2 py-1 rounded-lg border border-white/5 font-mono flex items-center justify-between">
+                    <span className="text-slate-400">Over ₹{Math.abs(ledger.todayRemaining)} − Flexible ₹{ledger.todayAbsorbedFromFlexible}:</span>
+                    <span className="font-bold text-rose-400">
+                      Net Deficit: {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}
+                    </span>
+                  </div>
+                )}
+
                 {ledger.todayDeficit > 0 ? (
-                  <p className="text-[10px] text-rose-400 font-medium">
-                    ⚠️ Deficit exceeds Flexible Savings!
+                  <p className="text-[10px] text-rose-300/90 leading-tight">
+                    ⚠️ {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })} net deficit remaining after absorbing {formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })} from Flexible Savings.
                   </p>
                 ) : (
-                  <p className="text-[10px] text-slate-300">
-                    Absorbed by Flexible Savings 🟢
+                  <p className="text-[10px] text-flexible-green font-medium">
+                    ✅ 100% absorbed by Flexible Savings cushion! Zero net deficit.
                   </p>
                 )}
               </div>
@@ -326,6 +343,13 @@ export const TierCards: React.FC = () => {
               <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 font-medium">
                 Accumulates daily surplus & absorbs overspending
               </p>
+
+              {ledger.todayAbsorbedFromFlexible > 0 && (
+                <div className="mt-2 p-1.5 px-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10.5px] flex items-center justify-between text-rose-300 font-mono">
+                  <span className="text-slate-300 text-[10px]">⚡ Used to absorb overspend:</span>
+                  <b className="text-rose-400">-{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}</b>
+                </div>
+              )}
             </div>
           </div>
 

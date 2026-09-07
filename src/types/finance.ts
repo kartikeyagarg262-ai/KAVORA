@@ -119,6 +119,7 @@ export interface FinancialLedger {
   todayRemaining: number;
   todayStatus: DayStatus;
   todayDeficit: number;
+  todayAbsorbedFromFlexible: number;
   currentDayIndex: number; // e.g. 6 of 30
   daysRemaining: number;
   smartDailyRecommended: number;
