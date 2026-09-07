@@ -466,11 +466,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           id: 'alert_' + Date.now(),
           type: 'overspent',
           title: 'Overspending Alert 🚨',
-          message: newLedger.todayAbsorbedFromFlexible > 0
-            ? (newLedger.todayDeficit > 0
-                ? `Exceeded today's budget by ₹${overspentAmount}. Absorbed ₹${newLedger.todayAbsorbedFromFlexible} from Flexible Savings. (Over ₹${overspentAmount} − Flexible ₹${newLedger.todayAbsorbedFromFlexible} = ₹${newLedger.todayDeficit} remaining deficit)`
-                : `Exceeded today's budget by ₹${overspentAmount}. Fully absorbed from Flexible Savings! (Over ₹${overspentAmount} − Flexible ₹${overspentAmount} = ₹0 deficit)`)
-            : `Exceeded today's budget by ₹${overspentAmount}. Flexible Savings has ₹0 cushion. Net deficit: ₹${overspentAmount}.`,
+          message: newLedger.todayDeficit > 0 
+            ? `You exceeded today's budget by ₹${overspentAmount}. ₹${newLedger.todayAbsorbedFromFlexible} was absorbed from Flexible Savings. Remaining net deficit: ₹${newLedger.todayDeficit}.`
+            : `You exceeded today's budget by ₹${overspentAmount}. Entire ₹${overspentAmount} was 100% absorbed by Flexible Savings! Zero net deficit.`,
           timestamp: 'Just now',
           read: false,
           meta: { amount: overspentAmount, flexibleRemaining: newLedger.currentFlexibleSavings },

@@ -234,14 +234,15 @@ export const TierCards: React.FC = () => {
                 <span>
                   {ledger.todayRemaining >= 0 ? (
                     <>Left: <b className="text-flexible-green font-bold">{formatCurrency(ledger.todayRemaining, { privacy: privacyMode })}</b></>
-                  ) : ledger.todayAbsorbedFromFlexible > 0 ? (
-                    <span className="text-[11px]">
-                      <span className="text-rose-400 font-bold">Over: {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</span>
-                      <span className="text-flexible-green font-semibold ml-1">(-{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })})</span>
-                      <span className="text-slate-200 font-bold ml-1">= {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}</span>
-                    </span>
                   ) : (
-                    <>Over: <b className="text-rose-400 font-bold">{formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</b></>
+                    <>
+                      Over: <b className="text-rose-400 font-bold">{formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</b>
+                      {ledger.todayAbsorbedFromFlexible > 0 && (
+                        <span className="text-[10px] text-slate-400 font-normal ml-1">
+                          (Net: <b className={ledger.todayDeficit > 0 ? "text-rose-400 font-bold" : "text-flexible-green font-bold"}>{formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}</b>)
+                        </span>
+                      )}
+                    </>
                   )}
                 </span>
               </div>
@@ -281,49 +282,35 @@ export const TierCards: React.FC = () => {
             )}
 
             {ledger.todayStatus === 'over' && (
-              <div className="flex flex-col gap-2 text-[11px] sm:text-xs bg-rose-500/10 p-3 rounded-2xl border border-rose-500/30">
+              <div className="flex flex-col gap-1.5 text-[11px] sm:text-xs text-rose-300 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 font-medium">
                 <div className="flex items-center justify-between font-bold">
                   <div className="flex items-center gap-1.5 text-rose-400">
-                    <AlertTriangle size={15} className="shrink-0 text-rose-400" />
-                    <span>Over Budget: {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</span>
+                    <AlertTriangle size={14} className="shrink-0" />
+                    <span>Over: {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</span>
                   </div>
                   {ledger.todayAbsorbedFromFlexible > 0 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-flexible-green/20 text-flexible-green border border-flexible-green/30 font-bold">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-flexible-green/15 text-flexible-green border border-flexible-green/25 font-bold">
                       -{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })} from Flexible
                     </span>
                   )}
                 </div>
 
-                {ledger.todayAbsorbedFromFlexible > 0 ? (
-                  <div className="bg-obsidian-950/85 p-2 rounded-xl border border-white/10 space-y-1 font-mono text-[11px]">
-                    <div className="flex justify-between text-slate-300">
-                      <span>1. Overspent Today:</span>
-                      <b className="text-rose-400">+{formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</b>
-                    </div>
-                    <div className="flex justify-between text-flexible-green">
-                      <span>2. Absorbed from Flexible:</span>
-                      <b>-{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}</b>
-                    </div>
-                    <div className="pt-1 border-t border-white/10 flex justify-between font-bold text-xs">
-                      <span className="text-white">Net Remaining Deficit:</span>
-                      <span className={ledger.todayDeficit > 0 ? 'text-rose-400' : 'text-flexible-green'}>
-                        {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[10.5px] text-slate-400 font-mono">
-                    No Flexible Savings available to cushion this overspend.
+                {ledger.todayAbsorbedFromFlexible > 0 && (
+                  <div className="text-[10.5px] text-slate-300 bg-obsidian-950/70 px-2 py-1.5 rounded-lg border border-white/5 font-mono flex items-center justify-between">
+                    <span className="text-slate-400">Over {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })} − Flexible {formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}:</span>
+                    <span className="font-bold text-rose-400">
+                      Net Deficit: {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}
+                    </span>
                   </div>
                 )}
 
                 {ledger.todayDeficit > 0 ? (
-                  <p className="text-[10.5px] text-rose-300/90 leading-tight">
-                    ⚠️ <b>Over ₹{Math.abs(ledger.todayRemaining)} − Flexible ₹{ledger.todayAbsorbedFromFlexible}</b> = <b>₹{ledger.todayDeficit}</b> net deficit.
+                  <p className="text-[10px] text-rose-300/90 leading-tight">
+                    ⚠️ {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })} net deficit remaining after absorbing {formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })} from Flexible Savings.
                   </p>
                 ) : (
-                  <p className="text-[10.5px] text-flexible-green font-medium">
-                    ✅ 100% absorbed by Flexible Savings cushion! Net deficit is ₹0.
+                  <p className="text-[10px] text-flexible-green font-medium">
+                    ✅ 100% absorbed by Flexible Savings cushion! Zero net deficit.
                   </p>
                 )}
               </div>
@@ -365,9 +352,25 @@ export const TierCards: React.FC = () => {
               </p>
 
               {ledger.todayAbsorbedFromFlexible > 0 && (
-                <div className="mt-2 p-1.5 px-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10.5px] flex items-center justify-between text-rose-300 font-mono">
-                  <span className="text-slate-300 text-[10px]">⚡ Used to absorb overspend:</span>
-                  <b className="text-rose-400">-{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}</b>
+                <div className="mt-2 p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[10.5px] space-y-1 font-mono">
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>Flexible before today:</span>
+                    <span className="font-semibold text-slate-200">
+                      {formatCurrency(ledger.currentFlexibleSavings + ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-rose-300">
+                    <span>− Absorbed for today:</span>
+                    <b className="text-rose-400">
+                      -{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}
+                    </b>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-white/10 text-flexible-mint font-bold">
+                    <span>= Remaining available:</span>
+                    <span>
+                      {formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

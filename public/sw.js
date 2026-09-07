@@ -46,7 +46,6 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(self.registration.showNotification(data.title, options));
-});
 // Handle scheduled alerts from the client (e.g. evening reminder)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
