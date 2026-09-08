@@ -207,13 +207,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClos
                   <AlertTriangle size={13} />
                   <span>Will exceed today's budget by {formatCurrency(projectedOverspentAmount)}</span>
                 </div>
-                {flexCanCover ? (
-                  <p className="text-slate-300">
-                    🟢 {formatCurrency(projectedOverspentAmount)} will be automatically deducted from Flexible Savings ({formatCurrency(ledger.currentFlexibleSavings)} → {formatCurrency(ledger.currentFlexibleSavings - projectedOverspentAmount)}).
-                  </p>
-                ) : (
+                <p className="text-slate-300">
+                  ⚡ {formatCurrency(projectedOverspentAmount)} will be deducted turant from Flexible Savings ({formatCurrency(ledger.currentFlexibleSavings)} → <b className={ledger.currentFlexibleSavings - projectedOverspentAmount < 0 ? 'text-rose-400 font-bold' : 'text-flexible-mint font-bold'}>{formatCurrency(ledger.currentFlexibleSavings - projectedOverspentAmount)}</b>).
+                </p>
+                {ledger.currentFlexibleSavings - projectedOverspentAmount < 0 && (
                   <p className="text-rose-400 font-medium">
-                    ⚠️ Your Flexible Savings cannot cover this overspending! Deficit will be flagged.
+                    ⚠️ Flexible Savings will become negative ({formatCurrency(ledger.currentFlexibleSavings - projectedOverspentAmount)}). Unspent budget at night will repay it.
                   </p>
                 )}
                 <p className="text-[10px] text-vault-purple font-semibold">

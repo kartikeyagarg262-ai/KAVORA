@@ -32,7 +32,7 @@ export const TodayExpenseList: React.FC<TodayExpenseListProps> = ({ onOpenAddExp
               Spent: <b className="text-white font-mono">{formatCurrency(ledger.todaySpent)}</b> of <b className="text-spending-cyan font-mono">{formatCurrency(ledger.todayBudget)}</b>
               {ledger.todayStatus === 'over' && (
                 <span className="ml-1.5 text-rose-400 font-semibold font-mono">
-                  • Over {formatCurrency(Math.abs(ledger.todayRemaining))}{ledger.todayAbsorbedFromFlexible > 0 ? ` − Flex ${formatCurrency(ledger.todayAbsorbedFromFlexible)} = ${formatCurrency(ledger.todayDeficit)} net` : ''}
+                  • Over {formatCurrency(Math.abs(ledger.todayRemaining))} (Flexible: {formatCurrency(ledger.currentFlexibleSavings)})
                 </span>
               )}
             </p>

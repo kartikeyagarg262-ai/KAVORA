@@ -134,14 +134,9 @@ export const calculateFinancialLedger = (
         });
       } else if (remaining < 0) {
         const overspent = Math.abs(remaining);
-        if (runningFlexibleSavings >= overspent) {
-          overspentDeducted = overspent;
-          runningFlexibleSavings -= overspent;
-        } else {
-          overspentDeducted = runningFlexibleSavings;
-          uncoveredDeficit = overspent - runningFlexibleSavings;
-          runningFlexibleSavings = 0;
-        }
+        overspentDeducted = overspent;
+        runningFlexibleSavings -= overspent;
+        uncoveredDeficit = runningFlexibleSavings < 0 ? Math.abs(runningFlexibleSavings) : 0;
 
         flexibleTransactions.push({
           id: `flex_absorb_${dayDate}_${i}`,
@@ -150,25 +145,20 @@ export const calculateFinancialLedger = (
           date: dayDate,
           time: '23:59',
           dayNumber: i,
-          description: uncoveredDeficit > 0 
-            ? `Day ${i} overspending absorbed (-₹${overspentDeducted}), deficit: ₹${uncoveredDeficit}`
-            : `Day ${i} overspending absorbed (-₹${overspentDeducted})`,
+          description: runningFlexibleSavings < 0 
+            ? `Day ${i} overspending deducted (-₹${overspentDeducted}), balance: -₹${Math.abs(runningFlexibleSavings)}`
+            : `Day ${i} overspending deducted (-₹${overspentDeducted})`,
           createdAt: new Date(dayDate).getTime() + 86399000,
           balanceAfter: runningFlexibleSavings,
         });
       }
     } else if (i === currentDayIndex) {
-      // Today: If overspent, show impact on Flexible Savings
+      // Today: If overspent, immediately send deduction to Flexible Savings (can go negative!)
       if (remaining < 0) {
         const overspent = Math.abs(remaining);
-        if (runningFlexibleSavings >= overspent) {
-          overspentDeducted = overspent;
-          runningFlexibleSavings -= overspent;
-        } else {
-          overspentDeducted = runningFlexibleSavings;
-          uncoveredDeficit = overspent - runningFlexibleSavings;
-          runningFlexibleSavings = 0;
-        }
+        overspentDeducted = overspent;
+        runningFlexibleSavings -= overspent;
+        uncoveredDeficit = runningFlexibleSavings < 0 ? Math.abs(runningFlexibleSavings) : 0;
 
         flexibleTransactions.push({
           id: `flex_absorb_today_${dayDate}`,
@@ -177,7 +167,9 @@ export const calculateFinancialLedger = (
           date: dayDate,
           time: 'Active',
           dayNumber: i,
-          description: `Today's overspending absorbed from Flexible Savings (-₹${overspentDeducted})`,
+          description: runningFlexibleSavings < 0 
+            ? `Today's overspending deducted turant (-₹${overspentDeducted}), Flexible is now -₹${Math.abs(runningFlexibleSavings)}`
+            : `Today's overspending deducted from Flexible Savings (-₹${overspentDeducted})`,
           createdAt: Date.now(),
           balanceAfter: runningFlexibleSavings,
         });

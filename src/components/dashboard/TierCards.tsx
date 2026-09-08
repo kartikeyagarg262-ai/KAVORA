@@ -237,11 +237,9 @@ export const TierCards: React.FC = () => {
                   ) : (
                     <>
                       Over: <b className="text-rose-400 font-bold">{formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</b>
-                      {ledger.todayAbsorbedFromFlexible > 0 && (
-                        <span className="text-[10px] text-slate-400 font-normal ml-1">
-                          (Net: <b className={ledger.todayDeficit > 0 ? "text-rose-400 font-bold" : "text-flexible-green font-bold"}>{formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}</b>)
-                        </span>
-                      )}
+                      <span className="text-[10px] text-slate-400 font-normal ml-1">
+                        (Flex: <b className={ledger.currentFlexibleSavings < 0 ? "text-rose-400 font-bold" : "text-flexible-green font-bold"}>{formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}</b>)
+                      </span>
                     </>
                   )}
                 </span>
@@ -288,29 +286,27 @@ export const TierCards: React.FC = () => {
                     <AlertTriangle size={14} className="shrink-0" />
                     <span>Over: {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })}</span>
                   </div>
-                  {ledger.todayAbsorbedFromFlexible > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-flexible-green/15 text-flexible-green border border-flexible-green/25 font-bold">
-                      -{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })} from Flexible
-                    </span>
-                  )}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
+                    Deducted turant from Flexible
+                  </span>
                 </div>
 
-                {ledger.todayAbsorbedFromFlexible > 0 && (
-                  <div className="text-[10.5px] text-slate-300 bg-obsidian-950/70 px-2 py-1.5 rounded-lg border border-white/5 font-mono flex items-center justify-between">
-                    <span className="text-slate-400">Over {formatCurrency(Math.abs(ledger.todayRemaining), { privacy: privacyMode })} − Flexible {formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}:</span>
-                    <span className="font-bold text-rose-400">
-                      Net Deficit: {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })}
-                    </span>
-                  </div>
-                )}
+                <div className="text-[10.5px] text-slate-300 bg-obsidian-950/70 px-2 py-1.5 rounded-lg border border-white/5 font-mono flex items-center justify-between">
+                  <span className="text-slate-400">
+                    Over {formatCurrency(Math.abs(ledger.todayRemaining))} sent to Flexible:
+                  </span>
+                  <span className={`font-bold ${ledger.currentFlexibleSavings < 0 ? 'text-rose-400' : 'text-flexible-green'}`}>
+                    Flexible is now {formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}
+                  </span>
+                </div>
 
-                {ledger.todayDeficit > 0 ? (
+                {ledger.currentFlexibleSavings < 0 ? (
                   <p className="text-[10px] text-rose-300/90 leading-tight">
-                    ⚠️ {formatCurrency(ledger.todayDeficit, { privacy: privacyMode })} net deficit remaining after absorbing {formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })} from Flexible Savings.
+                    ⚠️ Flexible Savings is currently negative ({formatCurrency(ledger.currentFlexibleSavings)}). Unspent budget at night will automatically roll in and repay it!
                   </p>
                 ) : (
                   <p className="text-[10px] text-flexible-green font-medium">
-                    ✅ 100% absorbed by Flexible Savings cushion! Zero net deficit.
+                    ✅ Absorbed by Flexible Savings cushion! {formatCurrency(ledger.currentFlexibleSavings)} cushion still available.
                   </p>
                 )}
               </div>
@@ -337,18 +333,28 @@ export const TierCards: React.FC = () => {
                 </div>
               </div>
 
-              <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-flexible-green/20 text-flexible-mint border border-flexible-green/30 font-bold">
-                Auto-Roll
-              </span>
+              {ledger.currentFlexibleSavings < 0 ? (
+                <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
+                  In Deficit
+                </span>
+              ) : (
+                <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-flexible-green/20 text-flexible-mint border border-flexible-green/30 font-bold">
+                  Auto-Roll
+                </span>
+              )}
             </div>
 
             {/* Amount */}
             <div className="my-1.5 sm:my-2">
-              <div className="text-2xl sm:text-4xl font-extrabold text-flexible-mint tracking-tight font-display">
+              <div className={`text-2xl sm:text-4xl font-extrabold tracking-tight font-display ${
+                ledger.currentFlexibleSavings < 0 ? 'text-rose-400' : 'text-flexible-mint'
+              }`}>
                 {formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}
               </div>
               <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 font-medium">
-                Accumulates daily surplus & absorbs overspending
+                {ledger.currentFlexibleSavings < 0
+                  ? '⚠️ In deficit. Unspent budget at night rolls in to repay this.'
+                  : 'Accumulates daily surplus & absorbs overspending'}
               </p>
 
               {ledger.todayAbsorbedFromFlexible > 0 && (
@@ -360,13 +366,15 @@ export const TierCards: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-rose-300">
-                    <span>− Absorbed for today:</span>
+                    <span>− Overspent today (deducted turant):</span>
                     <b className="text-rose-400">
                       -{formatCurrency(ledger.todayAbsorbedFromFlexible, { privacy: privacyMode })}
                     </b>
                   </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-white/10 text-flexible-mint font-bold">
-                    <span>= Remaining available:</span>
+                  <div className={`flex items-center justify-between pt-1 border-t border-white/10 ${
+                    ledger.currentFlexibleSavings < 0 ? 'text-rose-400' : 'text-flexible-mint'
+                  } font-bold`}>
+                    <span>= Current Flexible Savings:</span>
                     <span>
                       {formatCurrency(ledger.currentFlexibleSavings, { privacy: privacyMode })}
                     </span>
